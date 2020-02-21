@@ -102,7 +102,7 @@ end
     meta = DataFrameDBs.ColumnMeta(:a, Union{Missing, String})
 
     res = DataFrameDBs.make_materialization(meta)
-    println(res)
+    
     i = 0
     
     for block in DataFrameDBs.eachblock([io], [meta])

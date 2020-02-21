@@ -71,7 +71,9 @@ cmp_missing(a, b) = (ismissing(a) && ismissing(b)) || (!ismissing(a==b) && (a ==
     @test length(a[1:2:10]) == length(1:2:10)
     @test all(a[1:2:10].==test[1:2:10])
     @test typeof(a[1:2:10]) <: FlatStringsVector
-    
+    @test typeof(a[:]) <: FlatStringsVector
+    @test a[:] == a
+
     @test all( a[startswith.(a, "3")] == test[startswith.(test, "3")])
     @test typeof(a[startswith.(a, "3")]) <: FlatStringsVector
 
@@ -83,11 +85,14 @@ cmp_missing(a, b) = (ismissing(a) && ismissing(b)) || (!ismissing(a==b) && (a ==
     @test typeof(a[3:6]) <: FlatStringsVector
     
     @test length(a[1:2:10]) == length(1:2:10)
+    @test length(a[[]]) == 0
+    @test typeof(a[[]]) <: FlatStringsVector
+    
     @test all(cmp_missing.(a[1:2:10],test[1:2:10]))
     @test typeof(a[1:2:10]) <: FlatStringsVector
     @test typeof(a[ismissing.(a)]) <: FlatStringsVector
     @test length(ismissing.(a)) == length(ismissing.(test))
     @test all(a[@. !ismissing(a)] .== test[@. !ismissing(test)])
-    #@test all( a[startswith.(a, "3")] == test[startswith.(test, "3")])
+    
     #println(a[3:5].data)
 end

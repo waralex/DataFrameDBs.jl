@@ -66,6 +66,7 @@ function unsafe_remake_offsets!(a::FlatStringsVector{T})  where {T <: Union{Stri
             a.offsets[i] = a.offsets[i - 1] + (a.sizes[i - 1] >=0 ? a.sizes[i - 1] : 0)
         end        
     end
+    a.datasize = _elsizes(a, a.sizes)
 end
 
 Base.:(==)(a::FlatStringsVector{T}, b::FlatStringsVector{T}) where {T} =
@@ -112,7 +113,7 @@ end
 Base.size(a::FlatStringsVector) = Base.size(a.offsets)
 
 
-Base.@propagate_inbounds function Base.getindex(a::FlatStringsVector, i::Integer) 
+Base.@propagate_inbounds function Base.getindex(a::FlatStringsVector, i::Integer)     
     offset = eloffset(a, i)
     size = elsize(a, i)
     getstring(a, offset, size)
@@ -123,7 +124,7 @@ _elsizes(::FlatStringsVector{Union{String, Missing}}, sizes::SzVector) = sum(siz
 
 
 const PossibleRanges = Union{AbstractRange{<:Integer}, BitArray, AbstractVector{Bool}}
-Base.@propagate_inbounds function Base.getindex(a::FlatStringsVector{T}, r::PossibleRanges) where {T}
+Base.@propagate_inbounds function Base.getindex(a::FlatStringsVector{T}, r::Any) where {T}
     #TODO May be separate method for Continuous range ([a:b]) of data for copy data as single chunk 
     new_sizes = sizes(a)[r]
     data_size = _elsizes(a, new_sizes)

@@ -1,14 +1,3 @@
-abstract type AbstractDFColumn{T} <: AbstractVector{T} end
-
-struct DFColumn{T,VT} <: AbstractDFColumn{T}
-    path::String
-    DFColumn{T, VT}(path) where {T,VT} = new(path)
-end
-DFColumn(path::String, ::Type{T}) where {T} = DFColumn{T, Vector{T}}(path)
-DFColumn(path::String, ::Type{String})  = DFColumn{String, FlatStringsVector}(path)
-
-Base.show(io::IO, c::DFColumn) = print(io, c.path)
-
 mutable struct DFTable
     path ::String
     meta ::DFTableMeta
