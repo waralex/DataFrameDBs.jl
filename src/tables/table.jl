@@ -1,6 +1,3 @@
-
-
-
 abstract type AbstractDFColumn{T} <: AbstractVector{T} end
 
 struct DFColumn{T,VT} <: AbstractDFColumn{T}
@@ -19,7 +16,12 @@ mutable struct DFTable
     DFTable(path::AbstractString, meta::DFTableMeta) = new(path, meta, false)
 end
 
+#=struct DFColumn
+    table ::DFTable
+    meta ::ColumnMeta
+end=#
+
 blocksize(t::DFTable) = t.meta.block_size
 Base.isopen(t::DFTable) = t.is_opened
-
 columns_meta(t::DFTable) = t.meta.columns
+

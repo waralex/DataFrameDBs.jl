@@ -56,4 +56,38 @@ a = FlatStringsVector{Union{String, Missing}}(test)
 b = FlatStringsVector{Union{String, Missing}}(test)
 @test a == b
 @test ismissing.(a) == ismissing.(test)
+
+end
+
+cmp_missing(a, b) = (ismissing(a) && ismissing(b)) || (!ismissing(a==b) && (a == b)) 
+
+@testset "range index" begin
+    test = ["1", "222", "32", "44", "335", "11116", "312313127", "444", "assadf", "bvxvbx"]
+    a = FlatStringsVector{String}(test)
+    @test length(a[3:5]) == length(3:5)
+    @test all(cmp_missing.(a[3:5],test[3:5]))
+    @test typeof(a[3:6]) <: FlatStringsVector
+    
+    @test length(a[1:2:10]) == length(1:2:10)
+    @test all(a[1:2:10].==test[1:2:10])
+    @test typeof(a[1:2:10]) <: FlatStringsVector
+    
+    @test all( a[startswith.(a, "3")] == test[startswith.(test, "3")])
+    @test typeof(a[startswith.(a, "3")]) <: FlatStringsVector
+
+    test = ["1", "222", missing, "44", "335", "11116", missing, "444", "assadf", "bvxvbx"]
+    a = FlatStringsVector{Union{String, Missing}}(test)
+    
+    @test length(a[3:5]) == length(3:5)
+    @test all(cmp_missing.(a[3:5],test[3:5]))
+    @test typeof(a[3:6]) <: FlatStringsVector
+    
+    @test length(a[1:2:10]) == length(1:2:10)
+    @test all(cmp_missing.(a[1:2:10],test[1:2:10]))
+    @test typeof(a[1:2:10]) <: FlatStringsVector
+    @test typeof(a[ismissing.(a)]) <: FlatStringsVector
+    @test length(ismissing.(a)) == length(ismissing.(test))
+    @test all(a[@. !ismissing(a)] .== test[@. !ismissing(test)])
+    #@test all( a[startswith.(a, "3")] == test[startswith.(test, "3")])
+    #println(a[3:5].data)
 end

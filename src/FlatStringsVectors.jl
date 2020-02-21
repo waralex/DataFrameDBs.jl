@@ -85,6 +85,7 @@ Base.@propagate_inbounds elsize(a::FlatStringsVector, i::Number) =  a.sizes[i]
 
 
 sizes(a::FlatStringsVector) = a.sizes
+offsets(a::FlatStringsVector) = a.offsets
 
 @inline sizeofdata(a::FlatStringsVector) = a.datasize
 
@@ -111,8 +112,39 @@ end
 Base.size(a::FlatStringsVector) = Base.size(a.offsets)
 
 
-Base.@propagate_inbounds Base.getindex(a::FlatStringsVector, i::Int) = getstring(a, eloffset(a, i), elsize(a, i))
+Base.@propagate_inbounds function Base.getindex(a::FlatStringsVector, i::Integer) 
+    offset = eloffset(a, i)
+    size = elsize(a, i)
+    getstring(a, offset, size)
+end
 
+_elsizes(::FlatStringsVector{String}, sizes::SzVector) = sum(sizes)
+_elsizes(::FlatStringsVector{Union{String, Missing}}, sizes::SzVector) = sum(sizes[sizes .>= 0])
+
+
+const PossibleRanges = Union{AbstractRange{<:Integer}, BitArray, AbstractVector{Bool}}
+Base.@propagate_inbounds function Base.getindex(a::FlatStringsVector{T}, r::PossibleRanges) where {T}
+    #TODO May be separate method for Continuous range ([a:b]) of data for copy data as single chunk 
+    new_sizes = sizes(a)[r]
+    data_size = _elsizes(a, new_sizes)
+    new_offsets = offsets(a)[r]    
+    new_data = Base._string_n(data_size)
+    position = 0
+    for (size, offset) in zip(new_sizes, new_offsets)
+        if size > 0
+            GC.@preserve new_data a begin
+                unsafe_copyto!(pointer(new_data) + position, pointer(a.data) + offset, size)
+            end
+            position += size
+        end
+        
+    end
+    result = FlatStringsVector{T}()
+    result.data = new_data 
+    result.sizes = new_sizes
+    unsafe_remake_offsets!(result)
+    return result        
+end
 
 Base.sizehint!(a::FlatStringsVector, s::Int) = sizehint!(a.offsets, s)
 
