@@ -1,19 +1,14 @@
 
-@testset "base" begin
-    io = PipeBuffer()
-    test = "adfggggggg"
-    DataFrameDBs.write_string(io, test)
-    @test DataFrameDBs.read_string(io) == test
-end 
+
 
 @testset "meta_io" begin
-    test_meta = DataFrameDBs.DFTableMeta([:a, :b, :c, Symbol("with spaces и уникод")], 1223, 100, 1)
+    test_meta = DataFrameDBs.DFTableMeta([:a, :b, :c], [Int32, String, Int64], 1223, 1)
     io = PipeBuffer()
     DataFrameDBs.write_table_meta(io, test_meta)
     @test DataFrameDBs.read_table_meta(io) == test_meta
 end
 
-@testset "open table io" begin
+#=@testset "open table io" begin
     rm("test_tb", force = true, recursive = true) 
 
     @test_throws ErrorException DataFrameDBs.open_table("test_tb")
@@ -30,4 +25,4 @@ end
     
     rm("test_tb", force = true, recursive = true) 
     
-end
+end=#

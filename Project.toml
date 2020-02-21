@@ -4,10 +4,13 @@ authors = ["Alexandr Romanenko <waralex@gmail.com>"]
 version = "0.1.0"
 
 [deps]
+CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 CodecLz4 = "5ba52731-8f18-5e0d-9241-30f10d1ec561"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 JSON2 = "2535ab7d-5cd8-5a07-80ac-9b1792aadce3"
+JSON3 = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
 PooledArrays = "2dfb63ee-cc39-5dd5-95bd-886bf059d720"
 Tables = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"

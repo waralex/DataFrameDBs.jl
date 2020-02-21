@@ -3,12 +3,14 @@ Base.show(io, a::T) where {T<:Unsigned} = print(io, a)
 @testset "base" begin
     
     test = ["sfsdf", "ggggg", "ll", "", "kk"]
-    a = FlatStringsVector(test)
-    b = FlatStringsVector(test)
+    a = FlatStringsVector{String}(test)
+    b = FlatStringsVector{String}(test)
+    @test a == b
+    FlatStringsVectors.unsafe_remake_offsets!(b)
+    @test reinterpret(Int32,a.offsets) == reinterpret(Int32, b.offsets)
     @test a == b
     
-    
-    @test typeof(a[1]) <: SubString
+    @test typeof(a[1]) <: AbstractString
     @test length(a) == length(test)
     @test a[1] == test[1]
     @test a[2] == test[2]
@@ -19,11 +21,11 @@ Base.show(io, a::T) where {T<:Unsigned} = print(io, a)
         @test s == test[i]
     end
     
-    @test pointer(a.data) == pointer(a.string_data)
+    
     push!(a, "tyuu")
     @test a != b
     @test a[end] == "tyuu"
-    @test pointer(a.data) == pointer(a.string_data)
+    
     push!(a, "iooo")
     @test a[end] == "iooo"
     @test length(a) == length(test) + 2
@@ -31,13 +33,13 @@ Base.show(io, a::T) where {T<:Unsigned} = print(io, a)
     s = "123456789"
     push!(a, SubString(s, 3:5))
     @test a[end] == "345"
-    @test pointer(a.data) == pointer(a.string_data)
+    
     
     
 
     test_2 = ["1", "2", "", "fff"]
-    a = FlatStringsVector(test)
-    b = FlatStringsVector(test_2)
+    a = FlatStringsVector{String}(test)
+    b = FlatStringsVector{String}(test_2)
     append!(a, b)
     @test length(a) == length(test) + length(test_2)
 
@@ -46,4 +48,12 @@ Base.show(io, a::T) where {T<:Unsigned} = print(io, a)
         (i > length(test)) && @test s == test_2[i - length(test)]
     end
     
+end
+
+@testset "missing" begin
+test = ["sfsdf", "ggggg", missing, "", "kk", missing]
+a = FlatStringsVector{Union{String, Missing}}(test)
+b = FlatStringsVector{Union{String, Missing}}(test)
+@test a == b
+@test ismissing.(a) == ismissing.(test)
 end
