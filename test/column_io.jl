@@ -42,7 +42,7 @@ end
     res = DataFrameDBs.FlatStringsVector{String}()
     i = 0
     
-    for block in DataFrameDBs.eachblock([io], [DataFrameDBs.ColumnMeta(:a, String)])
+    for block in DataFrameDBs.eachblock([io], [DataFrameDBs.ColumnMeta(:a, String)], 400)
         
         append!(res, block[:a])
         
@@ -69,7 +69,7 @@ end
     res_rows = 0
     res_uncomp = 0
     stats = DataFrameDBs.SizeStats()
-    for block in DataFrameDBs.eachsize([io], [DataFrameDBs.ColumnMeta(:a, Int32)])
+    for block in DataFrameDBs.eachsize([io], [DataFrameDBs.ColumnMeta(:a, Int32)], 400)
         
         stats += block[:a]
         
@@ -103,7 +103,7 @@ end
     res = DataFrameDBs.make_materialization(meta)
     i = 0
     
-    for block in DataFrameDBs.eachblock([io], [meta])
+    for block in DataFrameDBs.eachblock([io], [meta], 400)
         
         append!(res, block[:a])
         
@@ -135,7 +135,7 @@ end
     
     i = 0
     
-    for block in DataFrameDBs.eachblock([io], [meta])
+    for block in DataFrameDBs.eachblock([io], [meta], 400)
         
         append!(res, block[:a])
         
@@ -180,7 +180,7 @@ end
     res = DataFrameDBs.make_materialization(meta)
     i = 0
     
-    for block in DataFrameDBs.eachblock([io], [meta])
+    for block in DataFrameDBs.eachblock([io], [meta], 400)
         
         append!(res, block[:a])
         
@@ -206,7 +206,7 @@ end
     res = DataFrameDBs.make_materialization(meta)
     i = 0
     
-    for block in DataFrameDBs.eachblock([io], [meta])
+    for block in DataFrameDBs.eachblock([io], [meta], 400)
         
         append!(res, block[:a])
         
@@ -237,7 +237,7 @@ end
     res = DataFrameDBs.make_materialization.(meta)
     i = 0
 
-    for block in DataFrameDBs.eachblock(io, meta)
+    for block in DataFrameDBs.eachblock(io, meta, 400)
         
         for (i, b) in enumerate(block)
             @test meta[i].name == b[1]

@@ -34,7 +34,7 @@ function show_humanrows(io, rows::Number)
             print(io, round(rows, digits = 2), " ", unit)
             return
         end 
-        rows /= 1024
+        rows /= 1000
     end
     print(io, rows, "BRows")
 end
@@ -62,5 +62,5 @@ function pretty_stats(s::SizeStats)
 end
 
 
-Base.show(io::IO, stats::SizeStats) = Base.show(io, pretty_stats(s))
+Base.show(io::IO, stats::SizeStats) = Base.show(io, pretty_stats(stats))
     

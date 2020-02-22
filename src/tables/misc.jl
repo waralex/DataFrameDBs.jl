@@ -2,7 +2,7 @@ function table_stats(table::DFTable; as_df = true)
     meta = columns_meta(table)
     result = Dict(Pair{Symbol, SizeStats}.(getproperty.(meta, :name), Ref(SizeStats())))
     ios = open_files(table, mode = :read)
-    for block in DataFrameDBs.eachsize(ios, meta)
+    for block in DataFrameDBs.eachsize(ios, meta, blocksize(table), row_index(table))
         for (n, size) in block
             @inbounds result[n] += size
         end

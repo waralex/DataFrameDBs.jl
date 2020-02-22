@@ -10,7 +10,7 @@ function materialize(table::DFTable)
     meta = columns_meta(table)
     result = make_materialization.(meta)
     ios = open_files(table, mode = :read)
-    for block in DataFrameDBs.eachblock(ios, meta)
+    for block in DataFrameDBs.eachblock(ios, meta, blocksize(table), row_index(table))
         for (i, col) in enumerate(block)
             append!(result[i], col[2])
         end
