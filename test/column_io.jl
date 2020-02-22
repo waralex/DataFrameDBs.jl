@@ -58,6 +58,36 @@ end
 
 end
 
+@testset "single column sizes" begin
+    
+    test_a = rand(Int32, 1000)
+    io = PipeBuffer()
+    DataFrameDBs.write_columns([io], [test_a], 400; close_on_done = false)
+    
+    res = DataFrameDBs.FlatStringsVector{String}()
+    i = 0
+    res_rows = 0
+    res_uncomp = 0
+    stats = DataFrameDBs.SizeStats()
+    for block in DataFrameDBs.eachsize([io], [DataFrameDBs.ColumnMeta(:a, Int32)])
+        
+        stats += block[:a]
+        
+        
+    end
+
+    @test stats.rows == length(test_a)
+    @test stats.uncompressed == sizeof(test_a)
+    
+    @test eof(io)
+
+    io = PipeBuffer()
+    DataFrameDBs.write_columns([io], [test_a], 400)
+    
+    #@test_throws ErrorException DataFrameDBs.eachblock([io], [DataFrameDBs.ColumnMeta(:a, Int32)])
+
+end
+
 @testset "missing column" begin
     
     size = 1000

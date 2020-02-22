@@ -4,6 +4,8 @@ const COMPRESSION_LEVEL = 2
 
 CompBuffer() =  IOBuffer(read = true,  append = true, truncate = true, sizehint = DEFAULT_BUFFER)
 
+const _BlockHeaderSizeAddon = sizeof((Int32, Int64, Int64))
+
 mutable struct BlockStream
     io ::IO
     uncomp_buffer ::IOBuffer
@@ -17,6 +19,8 @@ Base.eof(s::BlockStream) = Base.eof(s.io) && s.uncomp_buffer.size == 0
 Base.close(s::BlockStream) = Base.close(s.io)
 
 Base.flush(s::BlockStream) = Base.flush(s.io)
+
+stats_from_block(;rows, in_block_compressed, uncompressed) = SizeStats(rows, in_block_compressed + _BlockHeaderSizeAddon, uncompressed)
 
 function write(s::BlockStream, v::AbstractString) 
     write(s, Int32(length(v)))
@@ -50,8 +54,9 @@ function commit_block_write!(s::BlockStream)
     flush(s.io)
     truncate(s.comp_buffer, 0)
     truncate(s.uncomp_buffer, 0)
+    rows = s.rows
     s.rows = 0    
-    return (origin = size_to_compress, compressed = compressed_size)
+    return stats_from_block(rows = rows, in_block_compressed = compressed_size, uncompressed = size_to_compress)
 end
 
 read(s::BlockStream, v::Type{T})  where {T} = Base.read(s.io, v)
@@ -60,19 +65,32 @@ function read(s::BlockStream, v::Type{String})
     return String(Base.read(s.io, length))
 end
 
-read_compresed_sizes(s::BlockStream) = (origin = Base.read(s.io, Int64), compressed = Base.read(s.io, Int64))
+read_sizes(s::BlockStream) = (
+    rows = Base.read(s.io, Int32), 
+    origin = Base.read(s.io, Int64), 
+    compressed = Base.read(s.io, Int64)
+    )
+
+function skip_block(s::BlockStream)    
+    sizes = read_sizes(s)
+    Base.skip(s.io, sizes.compressed)
+    return stats_from_block(rows = sizes.rows, in_block_compressed = sizes.compressed, uncompressed = sizes.origin)
+end
 
 function read_block(f::Function, s::BlockStream)
-    rows = Base.read(s.io, Int32)
-    sizes = read_compresed_sizes(s)
+    
+    sizes = read_sizes(s)
+    
     Base.ensureroom(s.comp_buffer, sizes.compressed)
     Base.ensureroom(s.uncomp_buffer, sizes.origin)
     Base.unsafe_read(s.io, pointer(s.comp_buffer.data), sizes.compressed)
     size = CodecLz4.LZ4_decompress_safe(pointer(s.comp_buffer.data), pointer(s.uncomp_buffer.data),
-     sizes.compressed, sizes.origin)
+    sizes.compressed, sizes.origin)
     @assert size == sizes.origin "decompression error"
     s.uncomp_buffer.size = size
-    f(rows, s.uncomp_buffer)
+    f(sizes.rows, s.uncomp_buffer)
     truncate(s.comp_buffer, 0)
-    truncate(s.uncomp_buffer, 0)    
+    truncate(s.uncomp_buffer, 0)
+    
+    return stats_from_block(rows = sizes.rows, in_block_compressed = sizes.compressed, uncompressed = sizes.origin)
 end

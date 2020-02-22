@@ -4,7 +4,7 @@ function open_table(path::String)
     
     meta = read_table_meta(path)
     check_column_files(path, meta)
-    table = DFTable(path, meta)
+    table = DFTable{Editable}(path, meta)
     table.is_opened = true
     return table
 end
@@ -13,7 +13,7 @@ function create_table(path::String,
     column_names ::Union{AbstractVector{Symbol}, AbstractVector{String}},
     types ::AbstractVector{<:Type})
     
-    table = DFTable(path, DFTableMeta(column_names, types))
+    table = DFTable{Editable}(path, DFTableMeta(column_names, types))
     make_table_files(table)
     table.is_opened = true
     return table

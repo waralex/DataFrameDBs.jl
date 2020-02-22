@@ -59,13 +59,14 @@ function check_column_files(path::String, meta::DFTableMeta)
     end
 end
 
-function open_files(table::DFTable; mode = :read)
+function open_files(table::DFTable, condition::ColumnIndexType = Colon(); mode = :read)
     !(mode in (:read, :rewrite)) && error("undefinded mode $(mode)")
     
     !isopen(table) && error("table not opened")
-    result = Vector{IOStream}(undef, length(table.meta.columns))
+    metas = meta_by_condition(table, condition)
+    result = Vector{IOStream}(undef, length(metas))
     i = 1
-    for col_meta in table.meta.columns
+    for col_meta in metas
         io = open(columnpath(table,col_meta.id), mode == :read ? "r" : "a+")
         if mode == :rewrite
             seekstart(io)

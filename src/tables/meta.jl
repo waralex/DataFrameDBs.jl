@@ -31,10 +31,13 @@ struct DFTableMeta
         
         new(columns_meta, block_size, format_version)                        
     end
-     
+    
+
 end
 
-         
+DFTableMeta(old::DFTableMeta, new_columns ::Vector{ColumnMeta}) = DFTableMeta(new_columns, old.block_size, old.format_version)
+
+ 
 
 Base.:(==)(a::DFTableMeta, b::DFTableMeta) = a.format_version == b.format_version &&                                            
                                             a.block_size == b.block_size &&
