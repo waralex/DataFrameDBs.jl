@@ -63,7 +63,7 @@ using DataFrameDBs: create_table, table_stats,
     nq3 = add(nq2, 1)
     
     res = apply(nq3, test_data)
-    println(res)
+    
     @test test_data[:a][res] == test_data[:a][2:5][cond][[1]]
     @test test_data[:b][res] == test_data[:b][2:5][cond][[1]]
 
