@@ -1,6 +1,8 @@
 abstract type Editable end
 abstract type ReadOnly end
 
+
+
 mutable struct DFTable{T, RI}
     path ::String
     meta ::DFTableMeta
@@ -31,7 +33,7 @@ DFTable(path::AbstractString, meta::DFTableMeta) = DFTable{Editable}(path, meta)
 
 function Base.show(io::IO, table::DFTable) 
     !isopen(table) && return print(io, "closed table")
-    println(io, materialize(table[1:20,:]))
+    println(io, materialize(table[1:min(20, nrows(table)),:]))
     print(io, "...")
 end
 

@@ -1,6 +1,4 @@
-const ColumnIndexType = Union{Vector{Symbol}, Vector{<:Integer}, Colon, <:Integer, Symbol, AbstractRange{<:Integer}}
 
-const RowIndexType = Union{Vector{<:Integer}, <:Integer, AbstractRange{<:Integer}}
 
 meta_by_condition(table::DFTable, ::Colon) = table.meta.columns
 
