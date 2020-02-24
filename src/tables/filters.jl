@@ -97,11 +97,6 @@ function add(q::FilterQueue, func::FuncFilter)
     return result
 end
 
-#=function add(q::FilterQueue, pair::Pair{<:Tuple{Vararg{Symbol}}, <:Function})
-    result = deepcopy(q)
-    push!(result.queue, FuncFilter(pair))    
-    return result
-end=#
 
 @inline function apply_part(range::RowIndexType, chunk::AbstractDict{Symbol, <:AbstractVector}, elem::RowIndexType, already_processed::Int64)
     chunk_elem = intersect(elem .- already_processed, 1:length(range))
@@ -110,9 +105,6 @@ end=#
     return res
 end
 
-#Base.@propagate_inbounds _getindex(args::Tuple, I) = (_broadcast_getindex(args[1], I), _getindex(tail(args), I)...)
-#Base.@propagate_inbounds _getindex(args::Tuple{Any}, I) = (_broadcast_getindex(args[1], I),)
-#Base.@propagate_inbounds _getindex(args::Tuple{}, I) = ()
 
 @inline function apply_part(range::RowIndexType, chunk::AbstractDict{Symbol, <:AbstractVector}, elem::FuncFilter, already_processed::Int64)
     
