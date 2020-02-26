@@ -75,3 +75,9 @@ function read_block!(s::BlockStream, v::AbstractArray)
         read_block_body!(io, v, rows)
     end
 end
+
+function read_block_and_reset!(s::BlockStream, v::AbstractArray)
+    read_block_and_reset(s) do rows, io
+        read_block_body!(io, v, rows)
+    end
+end

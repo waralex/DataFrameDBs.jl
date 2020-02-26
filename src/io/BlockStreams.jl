@@ -77,6 +77,27 @@ function skip_block(s::BlockStream)
     return stats_from_block(rows = sizes.rows, in_block_compressed = sizes.compressed, uncompressed = sizes.origin)
 end
 
+function seek_to_lastblock(s::BlockStream, block_size::Integer)    
+    rows = block_size
+    while !eof(s.io)
+        mark(s.io)
+        rows = skip_block(s).rows        
+    end
+    
+    if rows < block_size 
+        reset(s.io)
+        return rows
+    end
+    return 0
+end
+
+function read_block_and_reset(f::Function, s::BlockStream)
+    mark(s.io)
+    res = read_block(f, s)
+    reset(s.io)
+    return res
+end
+
 function read_block(f::Function, s::BlockStream)
     
     sizes = read_sizes(s)

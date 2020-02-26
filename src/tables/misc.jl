@@ -1,12 +1,21 @@
 function table_stats(table::DFTable; as_df = true)
-    meta = columns_meta(table)
-    result = Dict(Pair{Symbol, SizeStats}.(getproperty.(meta, :name), Ref(SizeStats())))
+ meta = columns_meta(table)
+    isempty(table.meta.columns) && return as_df ? DataFrames.DataFrame : OrderedDict()
+    result = OrderedDict(Pair{Symbol, SizeStats}.(getproperty.(meta, :name), Ref(SizeStats())))
+    
     ios = open_files(table, mode = :read)
-    for block in DataFrameDBs.eachsize(ios, meta, blocksize(table), row_index(table))
-        for (n, size) in block
-            @inbounds result[n] += size
+    streams = BlockStream.(ios)
+    #println(result)
+    while !eof(first(streams))
+        sizes = skip_block.(streams)
+
+        for (i, r) in enumerate(result)
+            
+            result[r[1]] += sizes[i]
         end
     end    
+
+    
     !as_df && return result
 
     
@@ -15,7 +24,7 @@ function table_stats(table::DFTable; as_df = true)
     df = DataFrames.DataFrame(
         [
             collect(keys(result)),
-            getproperty.(meta_by_name.(Ref(table),keys(result)), :type),
+            string.(getproperty.(getmeta.(Ref(table),keys(result)), :type)),
             getproperty.(pretty, :rows),
             getproperty.(pretty, :uncompressed),
             getproperty.(pretty, :compressed),
@@ -25,7 +34,8 @@ function table_stats(table::DFTable; as_df = true)
     )
 
     totals = pretty_stats(totalstats(values(result)))
-    push!(df, [Symbol("Table total"), Any, totals.rows, totals.uncompressed, totals.compressed, totals.compression_ratio])
+    
+    push!(df, [Symbol("Table total"), "", totals.rows, totals.uncompressed, totals.compressed, totals.compression_ratio])
     
     return df
 end

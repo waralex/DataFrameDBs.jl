@@ -120,7 +120,15 @@ Base.@propagate_inbounds function Base.getindex(a::FlatStringsVector, i::Integer
 end
 
 _elsizes(::FlatStringsVector{String}, sizes::SzVector) = sum(sizes)
-_elsizes(::FlatStringsVector{Union{String, Missing}}, sizes::SzVector) = sum(sizes[sizes .>= 0])
+function _elsizes(::FlatStringsVector{Union{String, Missing}}, sizes::SzVector)
+    result = 0
+    for i in sizes
+        if i > 0
+            result += i
+        end
+    end
+    return result
+end
 
 
 const PossibleRanges = Union{AbstractRange{<:Integer}, BitArray, AbstractVector{Bool}}

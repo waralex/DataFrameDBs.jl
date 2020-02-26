@@ -5,12 +5,17 @@ make_materialization(::Type{Union{String, Missing}}) = FlatStringsVector{Union{S
 
 make_materialization(meta::ColumnMeta) = make_materialization(meta.type)
 
+make_materialization(table::DFTable, col::Symbol) = make_materialization(getmeta(table, col))
+
 
 function materialize(table::DFTable)
-    meta = columns_meta(table)
-    result = make_materialization.(meta)
-    ios = open_files(table, mode = :read)
-    for block in DataFrameDBs.eachblock(ios, meta, blocksize(table), row_index(table))
+    return materialize(table[:,:])
+end
+
+function materialize(table_view::TableView)
+    result = make_materialization.(getmeta.(Ref(table_view), table_view.columns))
+    
+    for block in eachprojection(table_view)
         for (i, col) in enumerate(block)
             append!(result[i], col[2])
         end
@@ -18,7 +23,7 @@ function materialize(table::DFTable)
     
     df =  DataFrames.DataFrame(
         result,
-        map(m->m.name, meta),
+        table_view.columns,
         copycols = false
     )
     return df

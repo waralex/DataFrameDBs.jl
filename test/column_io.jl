@@ -68,16 +68,16 @@ end
     i = 0
     res_rows = 0
     res_uncomp = 0
-    stats = DataFrameDBs.SizeStats()
+    stats = 0#DataFrameDBs.SizeStats()
     for block in DataFrameDBs.eachsize([io], [DataFrameDBs.ColumnMeta(:a, Int32)], 400)
         
-        stats += block[:a]
+        stats += block
         
         
     end
 
-    @test stats.rows == length(test_a)
-    @test stats.uncompressed == sizeof(test_a)
+    @test stats == length(test_a)
+    
     
     @test eof(io)
 

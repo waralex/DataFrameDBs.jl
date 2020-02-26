@@ -1,6 +1,7 @@
 include("tables/meta.jl")
 include("tables/filters.jl")
 include("tables/table.jl")
+include("tables/view.jl")
 include("tables/indexing.jl")
 include("tables/column.jl")
 include("tables/creators.jl")

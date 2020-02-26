@@ -59,6 +59,26 @@ function check_column_files(path::String, meta::DFTableMeta)
     end
 end
 
+
+function open_files(table_view::TableView, columns::Vector{Symbol})
+    
+    
+    !isopen(table_view.table) && error("table not opened")
+    metas = getmeta.(Ref(table_view.table), columns)
+    result = Vector{IOStream}(undef, length(metas))
+    i = 1
+    for col_meta in metas
+        io = open(columnpath(table_view.table,col_meta.id),  "r")
+        
+        check_column_head(io, table_view.table.meta, col_meta)
+        result[i] = io
+        i += 1
+    end
+    return result
+end
+
+open_files(table_view::TableView) = open_files(table_view, required_columns(table_view))
+
 function open_files(table::DFTable, condition::ColumnIndexType = Colon(); mode = :read)
     !(mode in (:read, :rewrite)) && error("undefinded mode $(mode)")
     
