@@ -6,7 +6,8 @@ mutable struct DFTable
     path ::String
     meta ::DFTableMeta
     is_opened ::Bool
-    DFTable(path::AbstractString, meta::DFTableMeta) = new(path, meta, false)    
+    show_read_progress ::Bool
+    DFTable(path::AbstractString, meta::DFTableMeta) = new(path, meta, false, false)    
 end
 
 
@@ -21,6 +22,10 @@ function Base.show(io::IO, table::DFTable)
     println(table_stats(table))
 end
 
+turnon_progress!(tb::DFTable) = tb.show_read_progress = true
+turnoff_progress!(tb::DFTable) = tb.show_read_progress = false
+
+isshow_progress(tb::DFTable) = tb.show_read_progress
 
 
 

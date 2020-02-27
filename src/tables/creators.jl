@@ -21,12 +21,12 @@ end
 
 type_from_source(::AbstractVector{T}) where {T} = T
 
-function create_table(path::String; from, block_size = DEFAULT_BLOCK_SIZE)
+function create_table(path::String; from, block_size = DEFAULT_BLOCK_SIZE, show_progress = true)
     schema = Tables.schema(from)
     isnothing(schema) && ArgumentError("Tables.schema undefinded for $(from)")    
     names = collect(schema.names)
     types = collect(schema.types)    
     table = create_table(path, names, types; block_size = block_size) 
-    insert(table, from)   
+    insert(table, from,  show_progress = show_progress)   
     return table 
 end

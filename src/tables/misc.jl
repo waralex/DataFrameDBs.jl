@@ -9,8 +9,7 @@ function table_stats(table::DFTable; as_df = true)
     while !eof(first(streams))
         sizes = skip_block.(streams)
 
-        for (i, r) in enumerate(result)
-            
+        for (i, r) in enumerate(result)            
             result[r[1]] += sizes[i]
         end
     end    
