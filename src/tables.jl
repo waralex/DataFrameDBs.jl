@@ -1,4 +1,6 @@
 include("tables/meta.jl")
+include("tables/broadcast.jl")
+include("tables/selection.jl")
 include("tables/filters.jl")
 include("tables/table.jl")
 include("tables/view.jl")

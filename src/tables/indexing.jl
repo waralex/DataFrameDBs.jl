@@ -60,7 +60,7 @@ Base.@propagate_inbounds function Base.getindex(tb::DFTable, row_index::Colon, c
 end
 
 function Base.getindex(tb::DFTable, row_index::RowIndexType, col_index::ColumnIndexType)
-    return TableView(tb, colnames_by_index(tb, col_index), add(FilterQueue(), row_index))    
+    return TableView(tb, colnames_by_index(tb, col_index), add(Selection(), row_index))    
 end
 
 function Base.getindex(v::TableView, row_index::Union{RowIndexType, Colon}, col_index::ColumnIndexType)

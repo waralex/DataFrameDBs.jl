@@ -1,5 +1,5 @@
 using DataFrameDBs: create_table, table_stats,
-         materialize, nrows, FuncFilter, FilterQueue, add, read_range,
+         materialize, nrows, FuncFilter, Selection, add, read_range,
         required_columns, extract_args, eval_on_range, apply, iscompleted
 @testset "filter construction" begin
     @test_throws ArgumentError FuncFilter([Vector{Int32}, Vector{Int64}], (:a, :b), (a, b, c)->true)
@@ -39,7 +39,7 @@ using DataFrameDBs: create_table, table_stats,
     
     @test test_data[:a][r2] == test_data[:a][(test_data[:a] .== test_data[:c]).&(test_data[:a] .!= test_data[:b])]
 
-    queue = FilterQueue()
+    queue = Selection()
     nq = add(queue, 2:5)
     nq = add(nq, test_f)
     @test isnothing(read_range(queue))
@@ -88,7 +88,7 @@ end
         :c => test_data[:c][5:end],
     )
     
-    q = FilterQueue()
+    q = Selection()
     q = add(q, test_f)
     q = add(q, 5:8)
     
@@ -101,4 +101,26 @@ end
 
     
 
+end
+
+@testset "selection equality" begin
+    q1 = Selection()
+    q2 = Selection()
+    @test q1 == q2
+    
+    q2 = add(q1, 5:8)
+
+    @test q1 != q2
+    q1 = deepcopy(q2)
+    
+    @test q1 == q2
+
+    q2 = add(q1, FuncFilter([Vector{Int32}, Vector{Int64}],(:a, :b), (a, b)->true))
+
+    @test q2 != q1
+    q1 = deepcopy(q2)
+    @test q1 == q2
+    test_f(a, b) = true
+    ff = FuncFilter([Vector{Int32}, Vector{Int64}],(:a, :b), test_f)
+    
 end

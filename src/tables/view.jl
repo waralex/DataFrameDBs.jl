@@ -1,8 +1,8 @@
 struct TableView
     table::DFTable
     columns ::Vector{Symbol}
-    filter ::FilterQueue
-    TableView(table::DFTable, columns::Vector{Symbol}, filter::FilterQueue = FilterQueue()) = new(table, columns, filter)    
+    filter ::Selection
+    TableView(table::DFTable, columns::Vector{Symbol}, filter::Selection = Selection()) = new(table, columns, filter)    
 end
 
 Base.names(v::TableView) = v.columns

@@ -43,11 +43,11 @@ mutable struct BlockIterator{IT}
     buffers ::Vector{AbstractVector}    
     block_size ::Int64
     position ::Int64
-    filter ::FilterQueue
+    filter ::Selection
     progress ::Union{Nothing, Channel}
     BlockIterator{IT}(streams::Vector{BlockStream}, names::Vector{Symbol},
                      buffers::Vector{<:AbstractVector}, block_size::Number,
-                     filter::FilterQueue, progress::Union{Nothing, <:Channel} = nothing) where {RI, IT} =
+                     filter::Selection, progress::Union{Nothing, <:Channel} = nothing) where {RI, IT} =
                       new{IT}(streams, names, buffers, block_size, 1, filter, progress)
 end
 
@@ -55,7 +55,7 @@ mutable struct ProjectionIterator{IT}
     block_it ::BlockIterator{IT}
     names ::Vector{Symbol}
     buffers ::Vector{AbstractVector}
-    filter ::FilterQueue
+    filter ::Selection
 
     ProjectionIterator(block_it ::BlockIterator{IT}, names::Vector{Symbol},
          buffers::Vector{<:AbstractVector}, filter::Filter) where {RI, IT, Filter} = 
@@ -63,14 +63,14 @@ mutable struct ProjectionIterator{IT}
 end
 
 BlockIterator(streams::Vector{BlockStream}, names::Vector{Symbol}, buffers::Vector{<:AbstractVector}, block_size::Number) =
-                BlockIterator{DataIterate}(streams, names, buffers, block_size, FilterQueue(), Nothing)
+                BlockIterator{DataIterate}(streams, names, buffers, block_size, Selection(), Nothing)
 
 BlockSizesIterator(streams::Vector{BlockStream}, names::Vector{Symbol}, buffers::Vector{<:AbstractVector},
-         block_size::Number, filter::FilterQueue = FilterQueue(), progress::Union{Nothing, Channel} = nothing) =
+         block_size::Number, filter::Selection = Selection(), progress::Union{Nothing, Channel} = nothing) =
                 BlockIterator{SizesIterate}(streams, names, buffers, block_size, filter, progress)
                 
 
-function eachblock(ios::Vector{<:IO}, columns ::Vector{ColumnMeta}, block_size::Integer, filter::FilterQueue = FilterQueue(), progress::Union{Nothing, Channel} = nothing) 
+function eachblock(ios::Vector{<:IO}, columns ::Vector{ColumnMeta}, block_size::Integer, filter::Selection = Selection(), progress::Union{Nothing, Channel} = nothing) 
     length(ios) != length(columns) && error("Lenght of names must be equal to lenght of io")    
     streams = BlockStream.(ios)        
     buffers = make_materialization.(columns)    
@@ -208,7 +208,7 @@ function Base.iterate(iter::ProjectionIterator{DataIterate}, state = nothing) wh
     
 end
 
-function eachsize(ios::Vector{<:IO}, columns ::Vector{ColumnMeta},  block_size::Integer, filter::FilterQueue = FilterQueue(), progress = nothing)
+function eachsize(ios::Vector{<:IO}, columns ::Vector{ColumnMeta},  block_size::Integer, filter::Selection = Selection(), progress = nothing)
     length(ios) != length(columns) && error("Lenght of names must be equal to length of io")    
     streams = BlockStream.(ios)    
     buffers = make_materialization.(columns)   
@@ -229,22 +229,6 @@ function eachsize(table_view::TableView)
     end
     return eachsize(ios, req_meta, blocksize(table_view.table), local_filter, progress)
 end
-
-
-#=@inline function block_result(iter::BlockIterator{Nothing, SizesIterate}, sizes::AbstractVector{SizeStats})    
-    return OrderedDict{Symbol, SizeStats}(
-        Pair{Symbol, SizeStats}.(iter.names, sizes)
-    )    
-end
-
-@inline function block_result(iter::BlockIterator{RI, SizesIterate}, sizes::AbstractVector{SizeStats}) where {RI}
-    
-    nrows = length(intersect(blockrange(iter), iter.row_index) .- (iter.position - 1))    
-    new_sizes = SizeStats.(nrows, getproperty.(sizes, :compressed), getproperty.(sizes, :uncompressed))    
-    return OrderedDict{Symbol, SizeStats}(
-        Pair{Symbol, SizeStats}.(iter.names, new_sizes)
-    )    
-end=#
 
 function Base.iterate(iter::BlockIterator{SizesIterate}, state = nothing)
     while true

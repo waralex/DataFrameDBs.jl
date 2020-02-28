@@ -27,7 +27,7 @@ function write_columns(ios::Vector{<:IO}, data::Vector{<:AbstractVector}, block_
     close_on_done && close.(streams)
 end
 
-function insert(table::DFTable, rows; show_progress = true, close_on_done = true)
+function insert(table::DFTable, rows; show_progress = false, close_on_done = true)
     progress = show_progress ? 
         ProgressMeter.ProgressUnknown("Insertion to table $(table.path): ") :
         nothing
@@ -113,7 +113,7 @@ function insert(table::DFTable, rows; show_progress = true, close_on_done = true
         )
         last_progress = Dates.now()
     end
-    ProgressMeter.finish!(progress)
+    !isnothing(progress) && ProgressMeter.finish!(progress)
     close_on_done && close.(streams)
     return table
 end

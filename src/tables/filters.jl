@@ -23,6 +23,13 @@ Base.@propagate_inbounds _extract_args(args::Tuple, d::AbstractDict) =(d[args[1]
 Base.@propagate_inbounds _extract_args(args::Tuple{Symbol}, d::AbstractDict) = (d[args[1]],)
 Base.@propagate_inbounds _extract_args(args::Tuple{}, d::AbstractDict) = ()
 
+Base.:(==)(a::FuncFilter{F, Cols, Types}, b::FuncFilter{F, Cols, Types}) where {F, Cols, Types} = a.f == b.f
+
+function Base.show(io::IO, f::FuncFilter{F, Cols, Types}) where {F, Cols, Types}
+    print(io, "(")
+    join(io, Cols, ", ")    
+    print(io, ")=>", f.f)
+end
 
 
 Base.@propagate_inbounds function extract_args(d::AbstractDict, ::FuncFilter{F, Cols, Types}) where {F, Cols, Types}
@@ -41,20 +48,27 @@ function eval_on_range(d::AbstractDict, filter::FuncFilter{F, Cols, Types}, rang
         
     result = Base.reindex((range,), (filter.buffer,))[1]
     
-    
-    
     return result
 end
 
-struct FilterQueue
+struct Selection
     queue ::Vector{Union{RowIndexType, <:FuncFilter}}
     processed ::Vector{Int64}
     finished ::Bool
-    FilterQueue() = new(Union{RowIndexType, FuncFilter}[], Int64[], false)
+    Selection() = new(Union{RowIndexType, FuncFilter}[], Int64[], false)
 end
 
-Base.length(q::FilterQueue) = Base.length(q.queue)
-Base.isempty(q::FilterQueue) = Base.isempty(q.queue)
+function Base.:(==)(a::Selection, b::Selection)
+    a.queue == b.queue
+end
+
+function Base.show(io::IO, s::Selection)
+    print(io, "Selection: ")
+    join(io, s.queue, " |> ")
+end
+
+Base.length(q::Selection) = Base.length(q.queue)
+Base.isempty(q::Selection) = Base.isempty(q.queue)
 
 function _try_merge(elem::RowIndexType, new::RowIndexType)
     return Base.reindex((elem,), (new,))[1]
@@ -63,28 +77,28 @@ function _try_merge(elem::FuncFilter, new)
     return nothing
 end
 
-function read_range(q::FilterQueue)
+function read_range(q::Selection)
     (isempty(q.queue) || first(q.queue) isa FuncFilter) && return nothing
     return first(q.queue)
 end
 
 
-isonly_range(q::FilterQueue) = Base.isempty(q) || (length(q.queue) == 1 && first(q.queue) isa RowIndexType)
+isonly_range(q::Selection) = Base.isempty(q) || (length(q.queue) == 1 && first(q.queue) isa RowIndexType)
 
 _append_to_collist!(a::Vector{Symbol}, b::FuncFilter{F, Cols, Types}) where {F, Cols, Types} = append!(a, collect(Cols))
 
 _append_to_collist!(a::Vector{Symbol}, b::RowIndexType) = a
 
-function required_columns(q::FilterQueue)
+function required_columns(q::Selection)
     columns = Symbol[]
     _append_to_collist!.(Ref(columns), q.queue)
     return unique(columns)
     
 end
 
-add(q::FilterQueue, ::Colon) = deepcopy(q)
+add(q::Selection, ::Colon) = deepcopy(q)
 
-function add(q::FilterQueue, range::RowIndexType)
+function add(q::Selection, range::RowIndexType)
     result = deepcopy(q)
     if isempty(result.queue) 
         push!(result.queue, range)
@@ -102,7 +116,7 @@ function add(q::FilterQueue, range::RowIndexType)
     return result
 end
 
-function add(q::FilterQueue, func::FuncFilter)
+function add(q::Selection, func::FuncFilter)
     result = deepcopy(q)    
     push!(result.queue, func)
     resize!(result.processed, length(result.queue))
@@ -128,7 +142,7 @@ end
     
 end
 
-prepare!(q::FilterQueue) = fill!(q.processed, 0)
+prepare!(q::Selection) = fill!(q.processed, 0)
 
 function _can_skip(elem::RowIndexType, processed::Integer, size_to_skip::Integer)
     return processed + size_to_skip < minimum(elem)
@@ -136,15 +150,15 @@ end
 _can_skip(elem::FuncFilter, processed::Integer, size_to_skip::Integer) = false
 
 
-function skip_if_can(q::FilterQueue, size_to_skip::Integer)
+function skip_if_can(q::Selection, size_to_skip::Integer)
     isempty(q.queue) && return false
     !_can_skip(q.queue[1], q.processed[1], size_to_skip) && return false
     q.processed[1] += size_to_skip
     return true
 end
 
-function apply(q::FilterQueue, chunk::AbstractDict{Symbol, <:AbstractVector})
-    #@time begin
+function apply(q::Selection, chunk::AbstractDict{Symbol, <:AbstractVector})
+    
     rows = length(first(chunk)[2])
     range = 1:rows        
         for i in 1:length(q.queue)        
@@ -152,13 +166,11 @@ function apply(q::FilterQueue, chunk::AbstractDict{Symbol, <:AbstractVector})
             q.processed[i] += length(range)
             range = new_range
             isempty(range) && break
-        end
-    #end
-    #println("ff")
+        end    
     return range
 end
 
-function apply_only_range(q::FilterQueue, chunk_size)
+function apply_only_range(q::Selection, chunk_size)
     @assert isonly_range(q)
     isempty(q) && return 1:chunk_size
     range = 1:chunk_size
@@ -170,7 +182,7 @@ end
 iscompleted(elem::FuncFilter, processed::Int64) = false
 iscompleted(elem::RowIndexType, processed::Int64) = maximum(elem .- processed) < 1
 
-function iscompleted(q::FilterQueue)
+function iscompleted(q::Selection)
     for i in 1:length(q.queue)        
         iscompleted(q.queue[i], q.processed[i]) && return true
     end
