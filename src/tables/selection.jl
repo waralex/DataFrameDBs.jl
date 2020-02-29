@@ -53,16 +53,16 @@ const SelectionExRangeType = Union{
     }
 const SelectionExElemType = Union{SelectionExRangeType, BroadcastExecutor}
 
-_convert_to_exe(t::Tuple{SelectionRangeType, Vararg}) = (RangeToProcess(t[1]), _convert_to_exe(Base.tail(t))...)
-_convert_to_exe(t::Tuple{BlockBroadcasting, Vararg}) = (BroadcastExecutor(t[1]), _convert_to_exe(Base.tail(t))...)
-_convert_to_exe(t::Tuple{}) = ()
+_sel_convert_to_exe(t::Tuple{SelectionRangeType, Vararg}) = (RangeToProcess(t[1]), _sel_convert_to_exe(Base.tail(t))...)
+_sel_convert_to_exe(t::Tuple{BlockBroadcasting, Vararg}) = (BroadcastExecutor(t[1]), _sel_convert_to_exe(Base.tail(t))...)
+_sel_convert_to_exe(t::Tuple{}) = ()
 
 struct SelectionExecutor{Args}
-    queue ::Args#Tuple{Vararg{SelectionExElemType}}
+    queue ::Args
     range_buffer ::Vector{Int64}
     SelectionExecutor(args::Args) where {Args} = new{Args}(args, Int64[])
 end
-SelectionExecutor(s::SelectionQueue{T}) where {T} = SelectionExecutor(_convert_to_exe(s.queue))
+SelectionExecutor(s::SelectionQueue{T}) where {T} = SelectionExecutor(_sel_convert_to_exe(s.queue))
 
 function _apply_to_block(range, t::Tuple{SelectionExRangeType, Vararg}, block::Union{NamedTuple, Nothing})::Vector{Int64}
     inblock_part = intersect(1:length(range), t[1].range)
