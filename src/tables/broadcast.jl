@@ -6,7 +6,7 @@ end
 struct BlockBroadcasting{RT, F, Args<:Tuple}
     f::F
     args::Args
-    function BlockBroadcasting(func::F, args::Args) where {F<:Function, Args<:Tuple{Vararg{Union{<:ColRef, BlockBroadcasting}}}}                
+    function BlockBroadcasting(func::F, args::Args) where {F<:Function, Args<:Tuple{Vararg{Union{<:ColRef, <:BlockBroadcasting}}}}                
         types_tuple = _sig_tuple(args)        
         !hasmethod(func, types_tuple) && throw(ArgumentError("function hasn't method for columns types $(types_tuple)"))
         res_types = Base.return_types(func, types_tuple)
@@ -92,7 +92,7 @@ _extract_for_eval!(dest::NamedTuple, data::NamedTuple, range, cols::Tuple{}) = n
 
 function eval_on_range(all_columns::NamedTuple,
     exec::BroadcastExecutor{BT, InBuff, OutBuff},
-    range::Union{Vector{<:Integer}, <:Integer, AbstractRange{<:Integer}}) where {BT, InBuff, OutBuff}
+    range::Union{<:AbstractVector{<:Integer}, <:Integer, AbstractRange{<:Integer}}) where {BT, InBuff, OutBuff}
     
     _extract_for_eval!(exec.in_buffers, all_columns, range, keys(exec.in_buffers))
     

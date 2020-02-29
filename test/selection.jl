@@ -1,4 +1,5 @@
-using DataFrameDBs: SelectionQueue, BlockBroadcasting, BroadcastExecutor, add, SelectionExecutor, apply, is_finished
+using DataFrameDBs: SelectionQueue, BlockBroadcasting, BroadcastExecutor, add, SelectionExecutor, apply, is_finished, ColRef
+using InteractiveUtils
 @testset "selection" begin
     @test true
     sel = SelectionQueue()
@@ -6,7 +7,7 @@ using DataFrameDBs: SelectionQueue, BlockBroadcasting, BroadcastExecutor, add, S
     sel2 = SelectionQueue((1:30, 1:2:30))
     @test typeof(sel2) == SelectionQueue{Tuple{UnitRange{Int64}, StepRange{Int64, Int64}}}
 
-    test_b = BlockBroadcasting([Vector{Int64}], (:a,), (a)->a==1)
+    test_b = BlockBroadcasting((a)->a==1, (ColRef{Int64}(:a),))
     sel3 = SelectionQueue((1:30, test_b, 1:2:30))
     @test typeof(sel3) == SelectionQueue{Tuple{UnitRange{Int64}, typeof(test_b), StepRange{Int64, Int64}}}
 
@@ -26,13 +27,13 @@ using DataFrameDBs: SelectionQueue, BlockBroadcasting, BroadcastExecutor, add, S
     @test length(sel3) == 1
     @test typeof(sel3) == SelectionQueue{Tuple{typeof(test_b)}}
     sel3 = add(sel3, test_b)
-    @test length(sel3) == 2
-    @test typeof(sel3) == SelectionQueue{Tuple{typeof(test_b), typeof(test_b)}}
+    @test length(sel3) == 1
+    
     sel3 = add(sel3, 1:3)
-    @test length(sel3) == 3
-    @test typeof(sel3) == SelectionQueue{Tuple{typeof(test_b), typeof(test_b), UnitRange{Int64}}}
+    @test length(sel3) == 2
+    
 
-    test_c = BlockBroadcasting([Vector{Int64}], (:a,), (a)->a*3)
+    test_c = BlockBroadcasting((a)->a*3, (ColRef{Int64}(:a),))
     @test_throws ArgumentError sel3 = add(sel3, test_c)
 
     
@@ -49,7 +50,7 @@ using DataFrameDBs: SelectionQueue, BlockBroadcasting, BroadcastExecutor, add, S
 
     exe_sel1 = SelectionQueue()
     exe_sel1 = add(exe_sel1, 10:60)
-    exe_sel1 = add(exe_sel1, BlockBroadcasting([Vector{Int64}], (:a,), (a)->65>a>34))
+    exe_sel1 = add(exe_sel1, BlockBroadcasting((a)->65>a>34, (ColRef{Int64}(:a),)))
     exe_sel1 = add(exe_sel1, 15:18)
     
     exe = SelectionExecutor(exe_sel1)
@@ -69,4 +70,40 @@ using DataFrameDBs: SelectionQueue, BlockBroadcasting, BroadcastExecutor, add, S
     end
     @test res == 49:52
     @test is_finished(exe)
+
+    test_data2 = (
+        a = collect(1:100),
+        b = collect((1:100) .* 5),
+        )
+    
+    exe_sel1 = SelectionQueue()
+    exe_sel1 = add(
+        exe_sel1, 
+        BlockBroadcasting((a)->65>a>34, (ColRef{Int64}(:a),))
+        )
+
+    exe_sel1 = add(
+        exe_sel1, 
+        BlockBroadcasting((b)->b % 10 == 0, (ColRef{Int64}(:b),))
+        )
+    @test length(exe_sel1) == 1
+    exe = SelectionExecutor(exe_sel1)
+    res = (a = Int64[], b = Int64[])
+    range = 1:50
+    for i in 1:2
+        part = (a = test_data2.a[range], b = test_data2.b[range])
+        @test !is_finished(exe)
+        r = apply(exe, 50, part)
+        append!(res.a, part.a[r])
+        append!(res.b, part.b[r])
+
+        range = range.+50
+    end
+    
+    test_range = @. (65 > test_data2.a > 34) & (test_data2.b % 10 == 0)
+
+    @test res.a == test_data2.a[test_range]
+    @test res.b == test_data2.b[test_range]
+    
+
 end
