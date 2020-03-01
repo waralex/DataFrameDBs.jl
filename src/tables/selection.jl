@@ -1,4 +1,4 @@
-const SelectionRangeType = Union{Vector{<:Integer}, <:Integer, AbstractRange{<:Integer}}
+const SelectionRangeType = Union{<:AbstractVector{<:Integer}, <:Integer, AbstractRange{<:Integer}}
 const SelectionElemType = Union{SelectionRangeType, BlockBroadcasting}
 
 struct SelectionQueue{Args<:Tuple}
@@ -49,8 +49,8 @@ Base.@propagate_inbounds _new_queue(old::Tuple{BlockBroadcasting}, elem::BlockBr
 Base.@propagate_inbounds _new_queue(old::Tuple{}, elem::SelectionElemType) = (elem,)
 
 _check_element(r::SelectionRangeType) = 0
-function _check_element(r::BlockBroadcasting)
-    (eltype(r) != Bool) && throw(ArgumentError("Broadcasting for selection must have Bool type"))
+function _check_element(r::BlockBroadcasting)    
+    (eltype(r) != Bool) && throw(ArgumentError("Function for selection must have Bool result type"))
 end
 
 function add(q::SelectionQueue, r::SelectionElemType)
@@ -70,7 +70,7 @@ mutable struct RangeToProcess{T}
 end
 
 const SelectionExRangeType = Union{
-        RangeToProcess{Vector{<:Integer}}, RangeToProcess{<:Integer}, RangeToProcess{<:AbstractRange{<:Integer}}
+        RangeToProcess{<:AbstractVector{<:Integer}}, RangeToProcess{<:Integer}, RangeToProcess{<:AbstractRange{<:Integer}}
     }
 const SelectionExElemType = Union{SelectionExRangeType, BroadcastExecutor}
 

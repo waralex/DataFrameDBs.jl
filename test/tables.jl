@@ -18,8 +18,11 @@ end
     meta2 = DataFrameDBs.ColumnMeta(:a, String)
     meta3 = DataFrameDBs.ColumnMeta(:a, Union{String, Missing})
     @test typeof(DataFrameDBs.make_materialization(meta1)) == Vector{Int64}
-    @test typeof(DataFrameDBs.make_materialization(meta2)) == DataFrameDBs.FlatStringsVector{String}
-    @test typeof(DataFrameDBs.make_materialization(meta3)) == DataFrameDBs.FlatStringsVector{Union{String, Missing}}
+    @test typeof(DataFrameDBs.make_buffer(meta1)) == Vector{Int64}
+    @test typeof(DataFrameDBs.make_buffer(meta2)) == DataFrameDBs.FlatStringsVector{String}
+    @test typeof(DataFrameDBs.make_materialization(meta2)) == Vector{String}
+    @test typeof(DataFrameDBs.make_buffer(meta3)) == DataFrameDBs.FlatStringsVector{Union{String, Missing}}
+    @test typeof(DataFrameDBs.make_materialization(meta3)) == Vector{Union{String, Missing}}
 end 
 
 @testset "open table filesystem" begin

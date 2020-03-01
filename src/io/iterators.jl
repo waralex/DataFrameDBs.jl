@@ -73,13 +73,13 @@ BlockSizesIterator(streams::Vector{BlockStream}, names::Vector{Symbol}, buffers:
 function eachblock(ios::Vector{<:IO}, columns ::Vector{ColumnMeta}, block_size::Integer, filter::Selection = Selection(), progress::Union{Nothing, Channel} = nothing) 
     length(ios) != length(columns) && error("Lenght of names must be equal to lenght of io")    
     streams = BlockStream.(ios)        
-    buffers = make_materialization.(columns)    
+    buffers = make_buffer.(columns)    
     prepare!(filter) 
     return BlockIterator{DataIterate}(streams, getproperty.(columns, :name), buffers, block_size, filter, progress)
 end
 
 function eachprojection(block_it::BlockIterator, columns ::Vector{ColumnMeta}) 
-    buffers = make_materialization.(columns)    
+    buffers = make_buffer.(columns)    
     return ProjectionIterator(block_it, getproperty.(columns, :name), buffers, block_it.filter)
 end
 
@@ -211,7 +211,7 @@ end
 function eachsize(ios::Vector{<:IO}, columns ::Vector{ColumnMeta},  block_size::Integer, filter::Selection = Selection(), progress = nothing)
     length(ios) != length(columns) && error("Lenght of names must be equal to length of io")    
     streams = BlockStream.(ios)    
-    buffers = make_materialization.(columns)   
+    buffers = make_buffer.(columns)   
     prepare!(filter)
     return BlockSizesIterator(streams, getproperty.(columns, :name), buffers, block_size, filter, progress)
 end

@@ -20,6 +20,7 @@ end
 Base.keys(::Projection{NamedTuple{Cols, T}}) where {Cols, T} = Cols
 
 Base.isempty(p::Projection) = Base.isempty(p.cols)
+Base.length(p::Projection) = Base.length(p.cols)
 
 function add(p::Projection, el::NamedTuple{Cols, <:Tuple{Vararg{<:Union{<:ColRef, <:BlockBroadcasting}}}}) where {Cols}
     for c in Cols
@@ -30,7 +31,7 @@ end
 
 
 
-#All indexes not type stable, but in rare operations
+#All indexes not type stable, but it is rare operations
 function Base.getindex(p::Projection, i::Integer)
     Projection(
         NamedTuple{(keys(p)[i],)}((p.cols[i],))

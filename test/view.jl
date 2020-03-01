@@ -1,15 +1,15 @@
 using DataFrameDBs: TableView, DFTable, create_table, 
 read_range, eachprojection, selection, eachsize, projection,
-DFView, proj_elem, required_columns, BlocksIterator, materialize
+DFView, proj_elem, required_columns, BlocksIterator, materialize, names, selproj
 using DataFrames
 using InteractiveUtils
 @testset "view" begin
     rm("test_data", force = true, recursive = true) 
-    size = 1000
+    sz = 1000
     df = DataFrame((
-        a = collect(1:size),        
-        b = string.(collect(1:size)),
-        c = collect(1:size)
+        a = collect(1:sz),        
+        b = string.(collect(1:sz)),
+        c = collect(1:sz)
     ))
 
     tb = create_table("test_data", from = df; block_size = 100)
@@ -26,31 +26,89 @@ using InteractiveUtils
     #println(it)
     #println(@code_typed optimize=true iterate(it))
     
-    while true
-        @time r = iterate(it)
-        println(r)
-        isnothing(r) && break
-    end
-    
-    materialize(v4)
 
-    pv1 = projection(v1, (e=:a,))
-    #println(pv1)
-    pv2 = projection(v1, (e = (:a,)=>(a)->a*2, a=:c))
-    @test required_columns(pv2) == (:a, :c)
+    dft = materialize(v1)
+    @test df == dft
+    @test DataFrameDBs.nrow(v1) == nrow(df)
+    dft = materialize(v2)
+    @test df == dft
+    @test DataFrameDBs.nrow(v2) == nrow(df)
     
-    #println(pv2)
-    pv3 = selection(pv2, :e => (e)-> e < 10)
-    #println("*** ", pv3)
-    pv4 = projection(pv2, (k=:e,))
-    #println("vv ", pv4)
-    pv6 = projection(pv4, (с = (:k,)=>(k)->k+5,))
-    #println("vv+ ", pv6)
+    @test size(v2) == size(df)
+    @test size(v2,1) == size(df,1)
+    @test size(v2,2) == size(df,2)
 
-    #println("====")
-    #println(proj_elem(v1, :a))
-    #println("====")
-    #println(proj_elem(v1, (:a,) => (a)->a*2 ))
+    dft = materialize(v3)
+    @test df[df[!,:a] .% 50 .== 0, :] == dft
+    @test DataFrameDBs.nrow(v3) == nrow(dft)
+    
+
+    dft = materialize(v4)
+    ind = @. (df[!,:a] % 50 == 0) & (df[!, :c] < 930)
+    @test DataFrame((a = df[ind, :a] ./ 50)) == dft
+    @test DataFrameDBs.nrow(v4) == nrow(dft)
+    @test size(v4) == size(dft)
+
+    
+    
+    @test_throws ArgumentError v5 = projection(v4, (c=:c,))
+
+    tv = projection(v1, [:a,:c])
+    @test size(tv, 2) == 2
+    @test materialize(tv) == df[:,[:a,:c]]
+
+    tv = projection(v1, [:a=>:a,:c=>:c=>(c)->c*2])
+    @test size(tv, 2) == 2
+    @test materialize(tv) == DataFrame((a=df[:,:a], c=df[:,:c].*2))
+
+    tv = projection(v1, [1,3])
+    @test size(tv, 2) == 2
+    @test materialize(tv) == df[:,[:a,:c]]
+
+    tv = projection(v1, 1:2)
+    @test size(tv, 2) == 2
+    @test materialize(tv) == df[:,[:a,:b]]
+
+    tv = selproj(v1, :a=>(a)->a%50==0, [:c])
+    @test size(tv, 2) == 1
+    @test materialize(tv) == df[df[!,:a] .% 50 .== 0, [:c]]
+
+    tv = selproj(v1, 1, [:c])
+    @test size(tv, 2) == 1
+    @test materialize(tv) == df[[1], [:c]]
+
+    tv = selproj(v1, [1,200], [:c])
+    @test size(tv, 2) == 1
+    @test materialize(tv) == df[[1,200], [:c]]
+
+
+    #tv = selproj(v1, :a=>(a)->a%50==0, [:c])
+    tv = v1[:a=>(a)->a%50==0, [:c]]
+    
+    @test size(tv, 2) == 1
+    @test materialize(tv) == df[df[!,:a] .% 50 .== 0, [:c]]
+
+    tv = v1[[1,200], [:c]]
+    @test size(tv, 2) == 1
+    @test materialize(tv) == df[[1,200], [:c]]
+
+    tv = v1[1:200, :]
+    @test size(tv, 2) == 3
+    @test size(tv, 1) == 200
+    @test materialize(tv) == df[1:200, :]
+
+    tv = v1[:, (e=:a,)]
+    @test size(tv, 2) == 1
+    @test size(tv, 1) == 1000
+    @test materialize(tv) == DataFrame((e = df[!,:a],))
+
+    tv = v1[:, :]
+    @test tv === v1
+
+    tv = tb[:, (e=:a,)]
+    @test size(tv, 2) == 1
+    @test size(tv, 1) == 1000
+    @test materialize(tv) == DataFrame((e = df[!,:a],))
 
     rm("test_data", force = true, recursive = true) 
 

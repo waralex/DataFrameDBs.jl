@@ -28,23 +28,19 @@ function write_columns(ios::Vector{<:IO}, data::Vector{<:AbstractVector}, block_
 end
 
 function insert(table::DFTable, rows; show_progress = false, close_on_done = true)
-    progress = show_progress ? 
-        ProgressMeter.ProgressUnknown("Insertion to table $(table.path): ") :
-        nothing
     
-    start_time = Dates.now()
-    last_progress = Dates.now()
+    
 
     check_schema(table, rows)
     ios = open_files(table, mode = :rewrite)
     streams = BlockStream.(ios)
-    writed_sizes = SizeStats[SizeStats() for i in  1:length(streams)]
     
+    progress= show_progress ? write_progress_channel(length(streams)) : nothing
 
     buffers = make_write_buffer.(columns_meta(table))
     lb_rows = first(seek_to_lastblock.(streams, blocksize(table)))
     if lb_rows > 0
-        last_block_cols = make_materialization.(columns_meta(table))
+        last_block_cols = make_buffer.(columns_meta(table))
         read_block_and_reset!.(streams, last_block_cols)
         buffers .= collect.(last_block_cols)
     end
@@ -62,27 +58,9 @@ function insert(table::DFTable, rows; show_progress = false, close_on_done = tru
         offset += 1
         if offset == blocksize(table) + 1
             prepare_block_write!.(streams, buffers)
-            writed_sizes .+= commit_block_write!.(streams)
-            if !isnothing(progress) && Dates.now() - last_progress > Dates.Millisecond(100)
-                
-                totals = totalstats(values(writed_sizes))
-                    
-                pretty = pretty_stats(totals)
-
-                row_per_sec = totals.rows / Dates.value(Dates.now() - start_time) * 1000
-                prow_per_sec = humanrows(row_per_sec) * "/sec"
-
-                ProgressMeter.update!(progress, totals.rows,
-                showvalues = [
-                    ("rows", pretty.rows),
-                    ("uncompressed size", pretty.uncompressed),
-                    ("compressed size", pretty.compressed),
-                    ("compression ratio", pretty.compression_ratio),
-                    ("processing", prow_per_sec)
-                    ]
-                )
-                last_progress = Dates.now()
-            end
+            sz = commit_block_write!.(streams)
+            !isnothing(progress) && put!(progress, sz)
+            
             offset = 1
             size = 0
         end
@@ -91,29 +69,16 @@ function insert(table::DFTable, rows; show_progress = false, close_on_done = tru
     if size > 0
         resize!.(buffers, size)        
         prepare_block_write!.(streams, buffers)
-        writed_sizes += commit_block_write!.(streams)
+        sz = commit_block_write!.(streams)
+        !isnothing(progress) && put!(progress, sz)
     end
+
     if !isnothing(progress)
-                
-        totals = totalstats(values(writed_sizes))
-            
-        pretty = pretty_stats(totals)
-
-        row_per_sec = totals.rows / Dates.value(Dates.now() - start_time) * 1000
-        prow_per_sec = humanrows(row_per_sec) * "/sec"
-
-        ProgressMeter.update!(progress, totals.rows,
-        showvalues = [
-            ("rows", pretty.rows),
-            ("uncompressed size", pretty.uncompressed),
-            ("compressed size", pretty.compressed),
-            ("compression ratio", pretty.compression_ratio),
-            ("processing", prow_per_sec)
-            ]
-        )
-        last_progress = Dates.now()
+        put!(progress, nothing)
+        take!(progress)        
+        
     end
-    !isnothing(progress) && ProgressMeter.finish!(progress)
+    
     close_on_done && close.(streams)
     return table
 end

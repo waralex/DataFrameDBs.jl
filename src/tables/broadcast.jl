@@ -8,7 +8,7 @@ struct BlockBroadcasting{RT, F, Args<:Tuple}
     args::Args
     function BlockBroadcasting(func::F, args::Args) where {F<:Function, Args<:Tuple{Vararg{Union{<:ColRef, <:BlockBroadcasting}}}}                
         types_tuple = _sig_tuple(args)        
-        !hasmethod(func, types_tuple) && throw(ArgumentError("function hasn't method for columns types $(types_tuple)"))
+        !hasmethod(func, types_tuple) && throw(ArgumentError("function $(func) hasn't method for columns types $(types_tuple)"))
         res_types = Base.return_types(func, types_tuple)
         (length(res_types) != 1) && throw(ArgumentError("funciton must have single return type"))        
         new{res_types[1], F, Args}(func, args)
