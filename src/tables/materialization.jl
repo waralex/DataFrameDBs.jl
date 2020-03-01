@@ -35,20 +35,3 @@ end
 function materialize(table::DFTable)
     return materialize(DFView(table))
 end
-
-function materialize(table_view::TableView)
-    result = make_buffer.(getmeta.(Ref(table_view), table_view.columns))
-    
-    for block in eachprojection(table_view)
-        for (i, col) in enumerate(block)
-            append!(result[i], col[2])
-        end
-    end
-    
-    df =  DataFrames.DataFrame(
-        result,
-        table_view.columns,
-        copycols = false
-    )
-    return df
-end

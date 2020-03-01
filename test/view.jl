@@ -1,5 +1,5 @@
-using DataFrameDBs: TableView, DFTable, create_table, 
-read_range, eachprojection, selection, eachsize, projection,
+using DataFrameDBs: DFTable, create_table, 
+selection, projection,
 DFView, proj_elem, required_columns, BlocksIterator, materialize, names, selproj
 using DataFrames
 using InteractiveUtils
@@ -109,6 +109,17 @@ using InteractiveUtils
     @test size(tv, 2) == 1
     @test size(tv, 1) == 1000
     @test materialize(tv) == DataFrame((e = df[!,:a],))
+
+    tv = tb[end-10:end, (e=:a,)]
+    @test size(tv, 2) == 1
+    @test size(tv, 1) == 11
+    @test materialize(tv) == DataFrame((e = df[end-10:end,:a],))
+
+
+    tv = tb[end-10:end, end-1:end]
+    @test size(tv, 2) == 2
+    @test size(tv, 1) == 11
+    @test materialize(tv) == df[end-10:end, end-1:end]
 
     rm("test_data", force = true, recursive = true) 
 

@@ -6,12 +6,12 @@ using Dates
 include("flat_strings.jl")
 include("block_streams.jl")
 include("tables.jl")
-include("table_io.jl")=#
+include("table_io.jl")
 #include("column_io.jl")
-#=include("missings.jl")
-include("create_from_data.jl")=#
+include("missings.jl")
+include("create_from_data.jl")
 
-#=include("broadcast.jl")
+include("broadcast.jl")
 include("selection.jl")
 include("projection.jl")=#
 include("view.jl")
