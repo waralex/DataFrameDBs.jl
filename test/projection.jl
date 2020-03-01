@@ -49,7 +49,9 @@ using InteractiveUtils
     
 
     l = test_p2[[:a, :e]]
-    
+
+    l = test_p2[(:a, :e)]
+    @test keys(l) == (:a, :e,)
 
 
     data = (
@@ -69,11 +71,14 @@ using InteractiveUtils
              b = BlockBroadcasting(test_func, (ColRef{Int64}(:a),))
          ,)
         )
+
+    @test required_columns(test_p) == (:a,)
     exec_p = ProjectionExecutor(test_p)
     res = eval_on_range(data, exec_p, 1:10:100)
     
     @test res.a == data.a[1:10:100]
     @test res.b == (data.a[1:10:100] .* 2)
 
-   
+    test_e = Projection()
+    @test isempty(test_e)
 end

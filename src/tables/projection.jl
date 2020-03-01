@@ -3,19 +3,32 @@ struct Projection{Args<:NamedTuple}
     function Projection(cols::Args) where {Args<:NamedTuple} 
         new{Args}(cols)
     end
+    function Projection()
+        new{NamedTuple{()}}(NamedTuple{()}(()))
+    end
+end
+
+function Base.show(io::IO, s::Projection)
+    print(io, "Projection: ")
+    nms = keys(s)
+    for i in 1:length(s.cols)
+        i > 1 && print(io, "; ")
+        print(io, nms[i], "=>", s.cols[i])
+    end    
 end
 
 Base.keys(::Projection{NamedTuple{Cols, T}}) where {Cols, T} = Cols
 
+Base.isempty(p::Projection) = Base.isempty(p.cols)
 
-function add(p::Projection, el::NamedTuple{Cols, <:Tuple{Vararg}}) where {Cols}
+function add(p::Projection, el::NamedTuple{Cols, <:Tuple{Vararg{<:Union{<:ColRef, <:BlockBroadcasting}}}}) where {Cols}
     for c in Cols
         (c in Base.keys(p)) && throw(ArgumentError("Duplicated column $(Cols[1])"))
     end
     return Projection(merge(p.cols, el))
 end
 
-#function _get_index(cols::Tuple, vals::Tuple, )
+
 
 #All indexes not type stable, but in rare operations
 function Base.getindex(p::Projection, i::Integer)
@@ -30,13 +43,14 @@ function Base.getindex(p::Projection, i::Union{AbstractRange{<:Integer}, Abstrac
     )
 end
 
-function _get_indexes(ids::Vector{Symbol}, t::NamedTuple{Cols, T}) where {Cols, T}
+function _get_indexes(ids::Union{AbstractVector{Symbol},Tuple{Vararg{Symbol}}}, t::NamedTuple{Cols, T}) where {Cols, T}
+    
     return Cols[1] in ids ?
         merge(NamedTuple{(Cols[1],)}((t[1],)), _get_indexes(ids, Base.tail(t))) :
         _get_indexes(ids, Base.tail(t))
 end
 
-_get_indexes(ids::Vector{Symbol}, t::NamedTuple{(), Tuple{}}) = NamedTuple{(),Tuple{}}(())
+_get_indexes(ids::Union{AbstractVector{Symbol},Tuple{Vararg{Symbol}}}, t::NamedTuple{(), Tuple{}}) = NamedTuple{(),Tuple{}}(())
 
 function Base.getindex(p::Projection, i::Symbol)     
     Projection(
@@ -44,9 +58,26 @@ function Base.getindex(p::Projection, i::Symbol)
     )
 end
 
-function Base.getindex(p::Projection, i::AbstractArray{Symbol})     
+function Base.getindex(p::Projection, i::Union{AbstractVector{Symbol},Tuple{Vararg{Symbol}}})     
+    
     Projection(
         _get_indexes(i, p.cols)
+    )
+end
+
+_proj_required_elem(e::ColRef) = (e.name,)
+_proj_required_elem(e::BlockBroadcasting) = required_columns(e)
+
+_proj_required_columns(t::Tuple) = (
+            _proj_required_elem(t[1])..., _proj_required_columns(Base.tail(t))...
+        )
+_proj_required_columns(t::Tuple{}) = ()
+
+function required_columns(p::Projection)
+    return (
+        unique( 
+        collect(_proj_required_columns(values(p.cols)))
+        )...,
     )
 end
 

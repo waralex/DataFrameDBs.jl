@@ -79,11 +79,13 @@ _boradcasted_args(buffers::NamedTuple, args::Tuple) = (
 _boradcasted_args(buffers::NamedTuple, args::Tuple{}) = ()
 
 function _extract_for_eval!(dest::NamedTuple, data::NamedTuple, range, cols::Tuple)    
+    
     @inbounds begin
         resize!(dest[cols[1]], length(range))
-        dest[cols[1]] .= data[cols[1]][range]
+        dest[cols[1]] .= view(data[cols[1]], range)
         _extract_for_eval!(dest, data, range, Base.tail(cols))    
     end
+
 end
    
 
@@ -94,10 +96,10 @@ function eval_on_range(all_columns::NamedTuple,
     exec::BroadcastExecutor{BT, InBuff, OutBuff},
     range::Union{<:AbstractVector{<:Integer}, <:Integer, AbstractRange{<:Integer}}) where {BT, InBuff, OutBuff}
     
-    _extract_for_eval!(exec.in_buffers, all_columns, range, keys(exec.in_buffers))
+   _extract_for_eval!(exec.in_buffers, all_columns, range, keys(exec.in_buffers))
     
    resize!(exec.buffer, length(range))    
    Base.Broadcast.materialize!(exec.buffer, exec.broadcasting)
-        
+    
    return exec.buffer
 end

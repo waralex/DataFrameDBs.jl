@@ -79,6 +79,20 @@ end
 
 open_files(table_view::TableView) = open_files(table_view, required_columns(table_view))
 
+function open_files(table::DFTable, columns::Tuple{Vararg{Symbol}})
+    
+    !isopen(table) && error("table not opened")
+    metas = getmeta.(Ref(table), columns)
+    
+    return map(metas) do col_meta
+        io = open(columnpath(table,col_meta.id),  "r")        
+        check_column_head(io, table.meta, col_meta)
+        io
+    end
+end
+
+
+
 function open_files(table::DFTable, condition::ColumnIndexType = Colon(); mode = :read)
     !(mode in (:read, :rewrite)) && error("undefinded mode $(mode)")
     

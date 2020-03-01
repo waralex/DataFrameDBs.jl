@@ -1,5 +1,8 @@
-using DataFrameDBs: TableView, DFTable, create_table, read_range, eachprojection, selection, eachsize
+using DataFrameDBs: TableView, DFTable, create_table, 
+read_range, eachprojection, selection, eachsize, projection,
+DFView, proj_elem, required_columns, BlocksIterator, materialize
 using DataFrames
+using InteractiveUtils
 @testset "view" begin
     rm("test_data", force = true, recursive = true) 
     size = 1000
@@ -13,59 +16,41 @@ using DataFrames
 
     @test names(tb) == names(df)
 
-    view = tb[:, :]
+    v1 = DFView(tb)
+    v2 = selection(v1, 1:1000)
+    v3 = selection(v2, (:a,) => (a)->a % 50 == 0)
+    v4 = selection(v3, :c => (a)->a < 930)
+    v4 = projection(v4, (a=(:a,)=> (a)->a / 50, ))
     
-    @test typeof(view) <: TableView
-    @test names(view) == names(df)
+    it = BlocksIterator(v4)
+    #println(it)
+    #println(@code_typed optimize=true iterate(it))
     
-    view2 = view[:, :]
-    @test typeof(view2) <: TableView
-    @test names(view2) == names(df)
-
-    view2 = view[:, 1]
-    @test typeof(view2) <: TableView
-    @test names(view2) == [:a]
-
-    view2 = view[:, [1,2]]
-    @test typeof(view2) <: TableView
-    @test names(view2) == [:a, :b]
-
-    view2 = view[:, [:a]]
-    @test typeof(view2) <: TableView
-    @test names(view2) == [:a]
-    view2 = view[:, [:a, :b]]
-    @test typeof(view2) <: TableView
-    @test names(view2) == [:a, :b]
-    view2 = view[:, 2:3]
-    @test typeof(view2) <: TableView
-    @test names(view2) == [:b, :c]
-    
-    view3 = tb[1:10, :]
-    @test typeof(view3) <: TableView
-    @test read_range(view3.filter) == 1:10
-    @test read_range(view3[3:4, :].filter) == 3:4
-    @test read_range(view3[:, :].filter) == read_range(view3.filter)
-    @test view3.filter === view3.filter
-    @test view3[:, :].filter !== view3.filter
-
-    view_iter = tb[101:105, [1]]
-    
-    iter = eachprojection(view_iter)
-    
-    for block in iter
-        @test block[:a] == df[101:105,:a]
+    while true
+        @time r = iterate(it)
+        println(r)
+        isnothing(r) && break
     end
-
-    view_iter2 = selection(tb, (:a,) => (a) -> a < 10)
-    view_iter2 = selection(view_iter2, (:c,) => (c) -> c > 5)
-
-    iter = eachprojection(view_iter2)
     
-    for block in iter
-        
-        @test block[:a] == Int64[6, 7, 8, 9]
-    end
+    materialize(v4)
 
+    pv1 = projection(v1, (e=:a,))
+    #println(pv1)
+    pv2 = projection(v1, (e = (:a,)=>(a)->a*2, a=:c))
+    @test required_columns(pv2) == (:a, :c)
+    
+    #println(pv2)
+    pv3 = selection(pv2, :e => (e)-> e < 10)
+    #println("*** ", pv3)
+    pv4 = projection(pv2, (k=:e,))
+    #println("vv ", pv4)
+    pv6 = projection(pv4, (с = (:k,)=>(k)->k+5,))
+    #println("vv+ ", pv6)
+
+    #println("====")
+    #println(proj_elem(v1, :a))
+    #println("====")
+    #println(proj_elem(v1, (:a,) => (a)->a*2 ))
 
     rm("test_data", force = true, recursive = true) 
 

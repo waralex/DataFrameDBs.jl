@@ -15,7 +15,5 @@ include("range_indexing.jl")=#
 #include("broadcast.jl")
 #include("selection.jl")
 include("projection.jl")
-#include("filters.jl")
-
-#include("view.jl")
+include("view.jl")
 #include("devel.jl")

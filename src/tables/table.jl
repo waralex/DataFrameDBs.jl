@@ -33,6 +33,7 @@ blocksize(t::DFTable) = t.meta.block_size
 Base.isopen(t::DFTable) = t.is_opened
 columns_meta(t::DFTable) = t.meta.columns
 
+
 function getmeta(table::DFTable, name::Symbol)
     res = findfirst(x->x.name == name, table.meta.columns)
     isnothing(res) && KeyError(name)

@@ -9,9 +9,30 @@ struct SelectionQueue{Args<:Tuple}
     end
 end
 
+function Base.show(io::IO, s::SelectionQueue)
+    print(io, "Selection: ")
+    for i in 1:length(s.queue)
+        i > 1 && print(io, " |> ")
+        print(io, s.queue[i])
+    end    
+end
+
 Base.last(s::SelectionQueue) = Base.last(s.queue)
 Base.isempty(s::SelectionQueue) = Base.isempty(s.queue)
 Base.length(s::SelectionQueue) = Base.length(s.queue)
+
+_sel_required_el(el::SelectionRangeType) = ()
+_sel_required_el(el::BlockBroadcasting) = required_columns(el)
+_sel_required_columns(t::Tuple) = [
+        _sel_required_el(t[1])..., _sel_required_columns(Base.tail(t))...
+    ]
+_sel_required_columns(t::Tuple{}) = ()
+
+function required_columns(s::SelectionQueue)
+    (
+        unique(_sel_required_columns(s.queue))...,
+    )
+end
 
 add(q::SelectionQueue, ::Colon) = q
 
@@ -88,6 +109,21 @@ function apply(s::SelectionExecutor, rows::Integer, block::Union{NamedTuple, Not
     resize!(s.range_buffer, rows)
     s.range_buffer .= (1:rows)
     _apply_to_block(view(s.range_buffer, 1:rows), s.queue, block)
+end
+
+function _skip_if_can(elem::SelectionExRangeType, size_to_skip::Integer)
+    if minimum(elem.range) > size_to_skip
+        elem.range = elem.range .- size_to_skip
+        return true
+    else
+        return false
+    end
+end
+_skip_if_can(elem::BroadcastExecutor, size_to_skip::Integer) = false
+
+function skip_if_can(q::SelectionExecutor, size_to_skip::Integer)
+    isempty(q.queue) && return false
+    return _skip_if_can(q.queue[1], size_to_skip)
 end
 
 _is_finished(t::Tuple{SelectionExRangeType, Vararg}) = maximum(t[1].range) < 1 ? true : _is_finished(Base.tail(t))
