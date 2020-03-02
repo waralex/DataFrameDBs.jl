@@ -15,4 +15,5 @@ include("broadcast.jl")
 include("selection.jl")
 include("projection.jl")=#
 include("view.jl")
+include("column.jl")
 #include("devel.jl")

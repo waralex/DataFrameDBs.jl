@@ -32,6 +32,14 @@ function materialize(v::DFView)
     DataFrames.DataFrame(result, copycols = false)
 end
 
+function materialize(c::DFColumn)
+    result = make_materialization(c.view)[1]
+    for block in BlocksIterator(c.view)        
+        append!(result, block[1])        
+    end    
+    return result
+end
+
 function materialize(table::DFTable)
     return materialize(DFView(table))
 end

@@ -66,6 +66,12 @@ function Base.getindex(p::Projection, i::Union{AbstractVector{Symbol},Tuple{Vara
     )
 end
 
+_proj_eltype(::ColRef{T}) where {T} = T
+_proj_eltype(::BlockBroadcasting{T}) where {T} = T
+
+coltype(p::Projection, i::Number) = _proj_eltype(p.cols[i])
+coltype(p::Projection, s::Symbol) = _proj_eltype(p.cols[s])
+
 _proj_required_elem(e::ColRef) = (e.name,)
 _proj_required_elem(e::BlockBroadcasting) = required_columns(e)
 

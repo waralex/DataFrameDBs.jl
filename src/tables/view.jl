@@ -36,6 +36,8 @@ end
 
 selection(v::DFView, broad::Pair{Symbol, <:Function}) = selection(v, (broad[1],)=>broad[2])
 
+selection(v::DFView, ::Colon) = v
+
 
 function proj_elem(v::DFView, elem::Symbol) 
     pcols = v.projection[elem].cols
@@ -71,15 +73,22 @@ projection(v::DFView, p::AbstractVector{Symbol}) = projection(v, (;zip(p, p)...)
 
 projection(v::DFView, p::AbstractVector{<:Pair{Symbol, Any}}) = projection(v, (;p...))
 
+projection(v::DFView, ::Colon) = v
 
-function selproj(v::DFView, select::Any, project::Any)
-    return projection(selection(v, select), project)
-end
+
+selproj(v::DFView, select::Any, project::Any) = projection(selection(v, select), project)
+
+
+selproj(v::DFView, select::Colon, project::Any) = projection(v, project)
+
+selproj(v::DFView, select::Any, project::Colon) = selection(v, select)
+selproj(v::DFView, select::Colon, project::Colon) = v
 
 Base.getindex(v::DFView, select::Any, project::Any) = selproj(v, select, project)
-Base.getindex(v::DFView, select::Any, project::Colon) = selection(v, select)
-Base.getindex(v::DFView, select::Colon, project::Any) = projection(v, project)
-Base.getindex(v::DFView, select::Colon, project::Colon) = v
+
+
+Base.getindex(v::DFView, s::Any, p::Union{Number, Symbol}) = DFColumn(selproj(v, s, [p]))
+
 
 Base.getindex(v::DFTable, select::Any, project::Any) = Base.getindex(DFView(v), select, project)
 
@@ -113,6 +122,7 @@ function Base.size(v::DFView, dim::Number)
     !(dim in 1:2) && throw(ArgumentError("DFView have only 2 dimensions"))
     dim == 1 && return nrow(v)
     dim == 2 && return ncol(v)
+    return 1
 end
 
 Base.size(t::DFTable) = Base.size(DFView(t))
