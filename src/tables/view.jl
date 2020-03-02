@@ -92,6 +92,9 @@ Base.getindex(v::DFView, s::Any, p::Union{Number, Symbol}) = DFColumn(selproj(v,
 
 Base.getindex(v::DFTable, select::Any, project::Any) = Base.getindex(DFView(v), select, project)
 
+issametable(a::DFView, b::DFView) = a.table == b.table
+issameselection(a::DFView, b::DFView) = issametable(a, b) && a.selection == b.selection
+
 function required_columns(v::DFView)
     (unique(
         [

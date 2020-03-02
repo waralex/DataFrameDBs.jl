@@ -1,6 +1,6 @@
 using DataFrameDBs: DFTable, create_table, 
 selection, projection,
-DFView, proj_elem, required_columns, BlocksIterator, materialize, names, selproj
+DFView, proj_elem, required_columns, BlocksIterator, materialize, names, selproj, issameselection
 using DataFrames
 using InteractiveUtils
 @testset "view" begin
@@ -120,6 +120,19 @@ using InteractiveUtils
     @test size(tv, 2) == 2
     @test size(tv, 1) == 11
     @test materialize(tv) == df[end-10:end, end-1:end]
+
+
+    @test tb[1:20, [:a, :b]] == tb[1:20, [:a, :b]]
+
+    @test tb[1:30, [:a, :b]] != tb[1:20, [:a, :b]]
+    @test !issameselection(tb[1:30, [:a, :b]], tb[1:20, [:a, :b]])
+    @test tb[1:20, [:a, :b]] != tb[1:20, [:b, :a]]
+    tff(a) = a%50==0
+    tv = selproj(v1, :a=>tff, [:c])
+    tv2 = tb[:a=>tff,:]
+    @test tv != tv2
+    @test issameselection(tv, tv2)
+    @test tv == tv2[:,[:c]]
 
     rm("test_data", force = true, recursive = true) 
 

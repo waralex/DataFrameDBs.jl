@@ -43,3 +43,7 @@ end
 function materialize(table::DFTable)
     return materialize(DFView(table))
 end
+
+head(v::DFView, rows = 10) = v[1:rows,:] |> materialize
+
+head(t::DFTable, rows = 10) = head(DFView(t), rows)
