@@ -22,7 +22,17 @@ Base.IndexStyle(::Type{<:DFColumn}) = IndexLinear()
 
 Base.getindex(c::DFColumn, i::AbstractRange) = DFColumn(selection(c.view, i))
 
-function Base.getindex(c::DFColumn, i::Number) 
+function Base.copyto!(dest::AbstractVector, src::DFColumn)
+    
+    offset = 1
+    for block in BlocksIterator(src.view)
+        view(dest, offset:(offset + length(block[1]) - 1)) .= block[1]
+        offset += length(block[1])
+    end
+    return dest   
+end
+
+function Base.getindex(c::DFColumn, i::Number)
     tmp_view = selection(c.view, i)
     it = BlocksIterator(tmp_view)
     res = iterate(it)
@@ -36,25 +46,23 @@ function Base.iterate(c::DFColumn{T, ViewT}) where {T, ViewT}
     block_res = iterate(it)
     isnothing(block_res) && return nothing
     block_data = block_res[1][1]
-    inblock_it = iterate(block_data)
+    inblock_pos = 1
     return (
-        inblock_it[1], (it, block_data, inblock_it[2])
+        block_data[inblock_pos], (it, block_data, inblock_pos)
         )
 end
 
 function Base.iterate(c::DFColumn, state)
     (it, block_data, inblock_pos) = state
-    inblock_it = iterate(block_data, inblock_pos)
-    if !isnothing(inblock_it)
-        return (
-            inblock_it[1], (it, block_data, inblock_it[2])
-        )
+    inblock_pos += 1
+    if inblock_pos <= length(block_data)
+        return (block_data[inblock_pos], (it, block_data, inblock_pos))
     end
     block_res = iterate(it)
     isnothing(block_res) && return nothing
     block_data = block_res[1][1]
-    inblock_it = iterate(block_data)
+    
     return (
-        inblock_it[1], (it, block_data, inblock_it[2])
+        block_data[1], (it, block_data, 1)
         )
 end

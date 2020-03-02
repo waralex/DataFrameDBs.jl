@@ -5,7 +5,7 @@ using DataFrames
 using InteractiveUtils
 @testset "columns" begin
     rm("test_data", force = true, recursive = true) 
-    sz = 1000
+    sz = 200
     df = DataFrame((
         a = collect(1:sz),        
         b = string.(collect(1:sz)),
@@ -23,15 +23,16 @@ using InteractiveUtils
     @test typeof(tb[:,:a]) <: DFColumn
     @test typeof(tb[1:5:end,:a]) <: DFColumn
 
+    
     #@test typeof(col) <: AbstractVector{Int64}
 
     @test length(col) == sz
 
     @test materialize(col) == df[!,:a]
-    println(eltype(col))
-    @test collect(col) == materialize(col)
-    @test unique(col) == collect(col)
-
+    
+    @test eltype(col) == Int64
+    @test collect(col) == materialize(col)    
+    @test unique(col) == collect(col)    
     col2 = col[90:110]
     @test collect(col2) == df[90:110, :a]
 
