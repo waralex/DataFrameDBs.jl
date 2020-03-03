@@ -37,7 +37,7 @@ end
 add(q::SelectionQueue, ::Colon) = q
 
 Base.@propagate_inbounds _new_queue(old::Tuple, elem::SelectionElemType) = (old[1], _new_queue(Base.tail(old), elem)...)
-Base.@propagate_inbounds _new_queue(old::Tuple{SelectionRangeType}, elem::SelectionRangeType) = (Base.reindex((old[1],), (elem,))[1],)
+Base.@propagate_inbounds _new_queue(old::Tuple{SelectionRangeType}, elem::SelectionRangeType) = (old[1][elem], )#(Base.reindex((old[1],), (elem,))[1],)
 Base.@propagate_inbounds _new_queue(old::Tuple{SelectionRangeType}, elem::BlockBroadcasting) = (old[1], elem)
 Base.@propagate_inbounds _new_queue(old::Tuple{BlockBroadcasting}, elem::SelectionRangeType) = (old[1], elem)
 

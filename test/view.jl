@@ -124,6 +124,8 @@ using InteractiveUtils
 
     @test tb[1:20, [:a, :b]] == tb[1:20, [:a, :b]]
 
+    @test tb[10, :a] == df[10, :a]
+
     @test tb[1:30, [:a, :b]] != tb[1:20, [:a, :b]]
     @test !issameselection(tb[1:30, [:a, :b]], tb[1:20, [:a, :b]])
     @test tb[1:20, [:a, :b]] != tb[1:20, [:b, :a]]

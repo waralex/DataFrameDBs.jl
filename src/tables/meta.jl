@@ -1,5 +1,5 @@
 
-struct ColumnMeta        
+mutable struct ColumnMeta        
     id ::Int64
     name ::Symbol
     type ::Type        
@@ -37,7 +37,9 @@ end
 
 DFTableMeta(old::DFTableMeta, new_columns ::Vector{ColumnMeta}) = DFTableMeta(new_columns, old.block_size, old.format_version)
 
- 
+Base.:(==)(a::ColumnMeta, b::ColumnMeta) = a.id == b.id &&
+                                           a.name == b.name &&
+                                           a.type == b.type
 
 Base.:(==)(a::DFTableMeta, b::DFTableMeta) = a.format_version == b.format_version &&                                            
                                             a.block_size == b.block_size &&

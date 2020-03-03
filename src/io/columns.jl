@@ -27,10 +27,101 @@ function write_columns(ios::Vector{<:IO}, data::Vector{<:AbstractVector}, block_
     close_on_done && close.(streams)
 end
 
-function insert(table::DFTable, rows; show_progress = false, close_on_done = true)
+function write_column(table::DFTable, name::Symbol, data::AbstractVector; close_on_done = true, show_progress = false)
     
+    total_rows = length(data)
+    io = open_file(table, name, mode = :rewrite)
     
+    stream = BlockStream(io)    
+    offset = 1
+    progress= show_progress ? write_progress_channel(1) : nothing
+    block_size = blocksize(table)
+    while offset + block_size  <= total_rows
+        r = offset:(offset + block_size - 1)
+        prepare_block_write!(stream, data[r])  
+        sz = commit_block_write!(stream)
+        !isnothing(progress) && put!(progress, [sz])
+        
+        offset += block_size
+    end
+    if offset <= total_rows
+        r = offset:total_rows
+        prepare_block_write!(stream, data[r])
+        sz = commit_block_write!(stream)               
+        !isnothing(progress) && put!(progress, [sz]) 
+    end    
+    if !isnothing(progress)
+        put!(progress, nothing)
+        take!(progress)        
+        
+    end
+    close_on_done && close(stream)
+end
 
+write_column(table::DFTable, name::Symbol, data; close_on_done = true, show_progress = false) =
+                     write_column_from_iterator(table, name, data; close_on_done = close_on_done, show_progress = show_progress)
+
+function write_column(table::DFTable, name::Symbol, data::DFColumn; close_on_done = true, show_progress = false)
+    if data.view.table != table || !isempty(data.view.selection)
+        return write_column_from_iterator(table::DFTable, name::Symbol, data; close_on_done = close_on_done, show_progress = show_progress)
+    end
+    
+    progress= show_progress ? write_progress_channel(1) : nothing
+    io = open_file(table, name, mode = :rewrite)    
+    stream = BlockStream(io)    
+
+    for block in BlocksIterator(data.view)
+        prepare_block_write!(stream, block[1])
+        sz = commit_block_write!(stream)
+        !isnothing(progress) && put!(progress, [sz])
+    end
+    if !isnothing(progress)
+        put!(progress, nothing)
+        take!(progress)                
+    end
+    close_on_done && close(stream)
+end
+
+function write_column_from_iterator(table::DFTable, name::Symbol, data; close_on_done = true, show_progress = false)
+    
+    total_rows = length(data)
+    (total_rows == 0) && return
+    io = open_file(table, name, mode = :rewrite)
+    buffer = make_write_buffer(getmeta(table, name))
+    stream = BlockStream(io)    
+    offset = 1
+    progress= show_progress ? write_progress_channel(1) : nothing
+    resize!(buffer, blocksize(table))
+    offset = 1
+    size = 0
+    for value in data
+        buffer[offset] = value
+        size += 1
+        offset += 1
+        if offset == blocksize(table) + 1
+            prepare_block_write!(stream, buffer)
+            sz = commit_block_write!(stream)
+            !isnothing(progress) && put!(progress, [sz])            
+            offset = 1
+            size = 0
+        end        
+    end
+    if size > 0
+        resize!(buffer, size)        
+        prepare_block_write!(stream, buffer)
+        sz = commit_block_write!(stream)
+        !isnothing(progress) && put!(progress, [sz])
+    end
+    if !isnothing(progress)
+        put!(progress, nothing)
+        take!(progress)        
+        
+    end
+    close_on_done && close(stream)
+end
+
+
+function insert(table::DFTable, rows; show_progress = false, close_on_done = true)
     check_schema(table, rows)
     ios = open_files(table, mode = :rewrite)
     streams = BlockStream.(ios)

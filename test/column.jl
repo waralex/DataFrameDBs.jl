@@ -39,6 +39,11 @@ using InteractiveUtils
     @test col2[1] == 90
     @test col2[12] == 101
     
+    col3 = tb[:, (:a,:c)=>(a,c)->a+c*2]
+    @test col3 |>materialize == df.a .+ df.c .* 2
+
+    col3 = tb[:, :a=>(a)->a*4]
+    @test col3 |>materialize == df.a .* 4
 
     rm("test_data", force = true, recursive = true)
 end

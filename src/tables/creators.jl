@@ -19,7 +19,8 @@ function create_table(path::String,
     return table
 end
 
-type_from_source(::AbstractVector{T}) where {T} = T
+#type_from_source(::AbstractVector{T}) where {T} = T
+#type_from_source(::Type{T}) where {T} = eltype{T}
 
 function create_table(path::String; from, block_size = DEFAULT_BLOCK_SIZE, show_progress = false)
     schema = Tables.schema(from)

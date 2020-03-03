@@ -23,6 +23,8 @@ using InteractiveUtils
     end
     @test i == sz
     
-
+    @test tb[3,:] == (a=3, b="3", c=3)
+    @test_throws BoundsError tb[202, :]
+    @test tb[3,[:c,:a]] == (c=3, a=3)
     rm("test_data", force = true, recursive = true)
 end

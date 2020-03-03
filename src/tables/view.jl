@@ -89,6 +89,18 @@ Base.getindex(v::DFView, select::Any, project::Any) = selproj(v, select, project
 
 Base.getindex(v::DFView, s::Any, p::Union{Number, Symbol}) = DFColumn(selproj(v, s, [p]))
 
+Base.getindex(v::DFView, s::Number, p::Union{Number, Symbol}) = DFColumn(selproj(v, s, [p]))[1]
+
+Base.getindex(v::DFView, s::Any, p::Pair{<:Tuple{Vararg{Symbol}},<:Function}) = DFColumn(selproj(v, s, (a=p,)))
+Base.getindex(v::DFView, s::Any, p::Pair{Symbol,<:Function}) = DFColumn(selproj(v, s, (a=p,)))
+
+function Base.getindex(v::DFView, s::Number, p::Any)
+    for r in rows(selproj(v, [s], p))
+        return r
+    end
+    throw(BoundsError(v, s))
+end
+
 
 Base.getindex(v::DFTable, select::Any, project::Any) = Base.getindex(DFView(v), select, project)
 

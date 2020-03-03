@@ -11,14 +11,20 @@ metapath(table::DFTable) = metapath(table.path)
 columnpath(base_path::String, id::Number) = joinpath(base_path, string(id)) * ".bin"
 columnpath(table::DFTable, id::Number) = columnpath(table.path, id)
 
-function make_column_file(table::DFTable, meta::ColumnMeta) where {T}
+function make_column_file(table::DFTable, meta::ColumnMeta, keep = false) where {T}
     path = columnpath(table, meta.id)
-    ispath(path) && error("Column file with $(meta.id) already exists")
+    ispath(path) && error("Column file with id $(meta.id) already exists")
 
-    open(path, "w") do io
-        Base.write(io, Int64(blocksize(table)))
-        write_column_type(io, meta.type)
-    end
+    io = open(path, "w")
+    Base.write(io, Int64(blocksize(table)))
+    write_column_type(io, meta.type)
+    !keep && close(io)
+    return io
+end
+function remove_column_file(table::DFTable, meta::ColumnMeta) where {T}
+    path = columnpath(table, meta.id)
+
+    rm(path, force = true)
 end
 
 function make_table_files(table::DFTable)
@@ -59,6 +65,18 @@ function check_column_files(path::String, meta::DFTableMeta)
     end
 end
 
+function open_file(table::DFTable, column::Symbol;mode = :read)
+    
+    !isopen(table) && error("table not opened")
+    meta = getmeta(table, column)
+    io = open(columnpath(table,meta.id), mode == :read ? "r" : "a+")        
+    if mode == :rewrite
+        seekstart(io)
+    end
+    check_column_head(io, table.meta, meta)
+    return io
+    
+end
 
 function open_files(table::DFTable, columns::Tuple{Vararg{Symbol}};mode = :read)
     
@@ -76,22 +94,14 @@ function open_files(table::DFTable, columns::Tuple{Vararg{Symbol}};mode = :read)
 end
 open_files(table::DFTable; mode = :read) = open_files(table, (names(table)...,), mode = mode)
 
+function drop_table!(table::DFTable) 
+    table_exists(table.path) && rm(table.path, force = true, recursive = true)
+    table.is_opened = false
+    return table
+end
 
-#=function open_files(table::DFTable, condition::ColumnIndexType = Colon(); mode = :read)
-    !(mode in (:read, :rewrite)) && error("undefinded mode $(mode)")
-    
-    !isopen(table) && error("table not opened")
-    metas = meta_by_condition(table, condition)
-    result = Vector{IOStream}(undef, length(metas))
-    i = 1
-    for col_meta in metas
-        io = open(columnpath(table,col_meta.id), mode == :read ? "r" : "a+")
-        if mode == :rewrite
-            seekstart(io)
-        end
-        check_column_head(io, table.meta, col_meta)
-        result[i] = io
-        i += 1
-    end
-    return result
-end=#
+function truncate_table!(table::DFTable) 
+    table_exists(table.path) && rm(table.path, force = true, recursive = true)
+make_table_files(table)    
+    return table
+end
