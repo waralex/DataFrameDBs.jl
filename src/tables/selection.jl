@@ -47,6 +47,7 @@ Base.@propagate_inbounds _new_queue(old::Tuple{BlockBroadcasting}, elem::BlockBr
                         )
 
 Base.@propagate_inbounds _new_queue(old::Tuple{}, elem::SelectionElemType) = (elem,)
+#Base.@propagate_inbounds _new_queue(old::Tuple{}, elem::BitArray) = ((1:length(elem))[elem],)
 
 _check_element(r::SelectionRangeType) = 0
 function _check_element(r::BlockBroadcasting)    
@@ -66,11 +67,16 @@ read_range(s::SelectionQueue) = _read_range(s.queue)
 
 mutable struct RangeToProcess{T}
     range::T
-    RangeToProcess(range::T) where {T} = new{T}(range)
+    offset::Int64
+    first::Int64
+    last::Int64
+    RangeToProcess(range::T) where {T} = new{T}(range, 0, minimum(range), maximum(range))
+    RangeToProcess(range::Union{BitArray, <:AbstractVector{Bool}}) = new{BitArray}(range, 0, 1, length(range))
 end
 
 const SelectionExRangeType = Union{
-        RangeToProcess{<:AbstractVector{<:Integer}}, RangeToProcess{<:Integer}, RangeToProcess{<:AbstractRange{<:Integer}}
+        RangeToProcess{<:AbstractVector{<:Integer}}, RangeToProcess{<:Integer}, RangeToProcess{<:AbstractRange{<:Integer}},
+        RangeToProcess{<:BitArray}
     }
 const SelectionExElemType = Union{SelectionExRangeType, BroadcastExecutor}
 
@@ -86,17 +92,38 @@ end
 SelectionExecutor(s::SelectionQueue{T}) where {T} = SelectionExecutor(_sel_convert_to_exe(s.queue))
 
 function _apply_to_block(range, t::Tuple{SelectionExRangeType, Vararg}, block::Union{NamedTuple, Nothing})::Vector{Int64}
-    inblock_part = intersect(1:length(range), t[1].range)
+    inblock_part = intersect((1:length(range)) .+ t[1].offset, t[1].range) .- t[1].offset
     #new_range = Base.reindex((range,), (inblock_part,))[1]    
     new_range = view(range, inblock_part)
-    t[1].range = t[1].range .- length(range)    
+    #t[1].range = t[1].range .- length(range)    
+    t[1].offset += length(range)
+    return isempty(new_range) ? 
+            Int64[] :
+            _apply_to_block(new_range, Base.tail(t), block)
+end
+
+function _apply_to_block(range, t::Tuple{RangeToProcess{<:BitArray}, Vararg}, block::Union{NamedTuple, Nothing})::Vector{Int64}
+    r = (1:length(range)) .+ t[1].offset
+    new_range = view(range, view(t[1].range, r))
+    
+    t[1].offset += length(range)
+    return isempty(new_range) ? 
+            Int64[] :
+            _apply_to_block(new_range, Base.tail(t), block)
+end
+
+function _apply_to_block(range, t::Tuple{RangeToProcess{<:AbstractArray{Bool}}, Vararg}, block::Union{NamedTuple, Nothing})::Vector{Int64}
+    r = (1:length(range)) .+ t[1].offset
+    new_range = view(range, view(t[1].range, r))
+    
+    t[1].offset += length(range)
     return isempty(new_range) ? 
             Int64[] :
             _apply_to_block(new_range, Base.tail(t), block)
 end
 
 function _apply_to_block(range, t::Tuple{BroadcastExecutor, Vararg}, block::NamedTuple)::Vector{Int64}
-    #new_range = Base.reindex((range,), (eval_on_range(block, t[1], range),))[1]
+    
     new_range = view(range, eval_on_range(block, t[1], range))
     return isempty(new_range) ? 
             Int64[] :
@@ -112,8 +139,8 @@ function apply(s::SelectionExecutor, rows::Integer, block::Union{NamedTuple, Not
 end
 
 function _skip_if_can(elem::SelectionExRangeType, size_to_skip::Integer)
-    if minimum(elem.range) > size_to_skip
-        elem.range = elem.range .- size_to_skip
+    if elem.first - elem.offset > size_to_skip
+        elem.offset += size_to_skip
         return true
     else
         return false
@@ -126,7 +153,7 @@ function skip_if_can(q::SelectionExecutor, size_to_skip::Integer)
     return _skip_if_can(q.queue[1], size_to_skip)
 end
 
-_is_finished(t::Tuple{SelectionExRangeType, Vararg}) = maximum(t[1].range) < 1 ? true : _is_finished(Base.tail(t))
+_is_finished(t::Tuple{SelectionExRangeType, Vararg}) = t[1].last <= t[1].offset ? true : _is_finished(Base.tail(t))
 _is_finished(t::Tuple{BroadcastExecutor, Vararg}) = _is_finished(Base.tail(t))
 _is_finished(::Tuple{}) = false
 

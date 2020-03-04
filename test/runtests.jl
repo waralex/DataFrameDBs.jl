@@ -2,7 +2,7 @@ using Test
 using DataFrameDBs
 import DataFrames
 using Dates
-#=include("column_types.jl")
+include("column_types.jl")
 include("flat_strings.jl")
 include("block_streams.jl")
 include("tables.jl")
@@ -14,8 +14,9 @@ include("create_from_data.jl")
 include("broadcast.jl")
 include("selection.jl")
 include("projection.jl")
-include("view.jl")=#
+include("view.jl")
 include("column.jl")
 include("rows.jl")
 include("table_changes.jl")
+include("columnbroadcast.jl")
 #include("devel.jl")
