@@ -132,7 +132,7 @@ function Base.iterate(it::BlocksIterator{SizeReader}, state = nothing)
             end            
             return nothing
         end
-        sz = read_cols(it, it.sel_cols)
+        sz = isonly_range(it.selection) ? skip_cols(it, it.sel_cols) : read_cols(it, it.sel_cols)
         range = apply(it.selection, sz.rows, it.buffers)
         if !isempty(range)            
             !isnothing(it.progress) && put!(it.progress, sz.rows)

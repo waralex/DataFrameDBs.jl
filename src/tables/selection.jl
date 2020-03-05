@@ -138,6 +138,14 @@ function apply(s::SelectionExecutor, rows::Integer, block::Union{NamedTuple, Not
     _apply_to_block(view(s.range_buffer, 1:rows), s.queue, block)
 end
 
+_isonly_range(t::Tuple{BroadcastExecutor, Vararg}) = false
+_isonly_range(t::Tuple) = _isonly_range(Base.tail(t))
+_isonly_range(t::Tuple{}) = true
+
+function isonly_range(s::SelectionExecutor)
+    return _isonly_range(s.queue)
+end
+
 function _skip_if_can(elem::SelectionExRangeType, size_to_skip::Integer)
     if elem.first - elem.offset > size_to_skip
         elem.offset += size_to_skip

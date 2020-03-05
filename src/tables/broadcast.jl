@@ -10,9 +10,8 @@ struct BlockBroadcasting{RT, F, Args<:Tuple}
         bargs = map(block_broadcastable, args)
         types_tuple = _sig_tuple(bargs)        
         !hasmethod(func, types_tuple) && throw(ArgumentError("function $(func) hasn't method for columns types $(types_tuple)"))
-        res_types = Base.return_types(func, types_tuple)
-        (length(res_types) != 1) && throw(ArgumentError("funciton must have single return type"))        
-        new{res_types[1], F, Args}(func, bargs)
+        res_type = Base._return_type(func, types_tuple)
+        new{res_type, F, Args}(func, bargs)
     end    
 end
 

@@ -1,4 +1,4 @@
-struct DFColumn{T} <: AbstractVector{T}
+struct DFColumn{T}
     view::DFView
     function DFColumn(view::DFView) 
         size(view, 2) != 1 && throw(ArgumentError("Column projection must contains singe element"))
