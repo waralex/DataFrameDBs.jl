@@ -27,7 +27,10 @@ Base.getindex(c::DFColumn, i::AbstractRange) = DFColumn(selection(c.view, i))
 
 map_to_column(f::Function, c::DFColumn) = map_to_column(f, c.view)
 
-selection(v::DFView, col::DFColumn{Bool}) = selection(v, col.view.projection.cols[1])
+function selection(v::DFView, col::DFColumn{Bool})
+    v.selection != col.view.selection && throw(ArgumentError("col must have same selection as view"))
+    selection(v, col.view.projection.cols[1])
+end
 
 function Base.setproperty!(v::DFView, name::Symbol, value::DFColumn)  
     !issameselection(v, value.view) && throw(ArgumentError("Can't add column with another selection"))
