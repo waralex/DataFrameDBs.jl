@@ -26,7 +26,7 @@ function BlocksIterator(v::DFView)
     
     sel_cols = required_columns(v.selection)
     proj_cols = required_columns(v.projection)
-    #if sel_cols is empty we need any proj col to read sizes 
+    
     (isempty(sel_cols) && !isempty(proj_cols)) && (sel_cols = (first(proj_cols),))
     proj_cols = (setdiff(
                     required_columns(v.projection), sel_cols

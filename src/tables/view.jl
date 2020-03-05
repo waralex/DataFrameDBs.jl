@@ -1,9 +1,17 @@
-struct DFView{Proj<:Projection, Sel<:SelectionQueue}
+mutable struct DFView
     table::DFTable
-    projection::Proj
-    selection::Sel
-    DFView(table::DFTable, proj::Proj, sel::Sel) where {Proj, Sel} = new{Proj, Sel}(table, proj, sel)
+    projection::Projection
+    selection::SelectionQueue
+    DFView(table::DFTable, proj::Projection, sel::SelectionQueue)  = new(table, proj, sel)
 end
+
+
+function Base.:(==)(a::DFView, b::DFView)
+    a.table == b.table &&
+    a.projection == b.projection &&
+    a.selection == b.selection
+end
+
 
 ref_by_meta(meta::ColumnMeta) = ColRef{meta.type}(meta.name)
 
@@ -103,6 +111,28 @@ end
 
 
 Base.getindex(v::DFTable, select::Any, project::Any) = Base.getindex(DFView(v), select, project)
+
+
+function map_to_column(f::Function, v::DFView)
+    return v[:,names(v) => f]
+end
+
+map_to_column(f::Function, t::DFTable) = map_to_column(f, t[:,:])
+
+
+function Base.getproperty(v::DFView, name::Symbol)  
+    (name in fieldnames(typeof(v))) && return getfield(v, name)
+    return v[:, name]
+end
+
+
+
+function Base.getproperty(v::DFTable, name::Symbol)  
+    (name in fieldnames(typeof(v))) && return getfield(v, name)
+    return v[:, name]
+end
+
+
 
 issametable(a::DFView, b::DFView) = a.table == b.table
 issameselection(a::DFView, b::DFView) = issametable(a, b) && a.selection == b.selection

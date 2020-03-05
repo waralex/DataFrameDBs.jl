@@ -47,38 +47,35 @@ using InteractiveUtils
     res = eval_on_range(data, exec, 1:10:100)
     test_res = data.a[1:10:100] .*2 .+ data.c[1:10:100]
     @test res == test_res
-    #println(@code_typed optimize=true eval_on_range(data, exec, 1:10:100))
-    #println("===========")
-    #@code_warntype eval_on_range(data, exec, 1:10:100)
-    #=exec = BroadcastExecutor(test_b)
-    @test typeof(exec.buffer) == Vector{Int64}
 
-    res = eval_on_range(data, exec, 1:100)
-    @test res == data[:a] .* 2
+    test_e = BlockBroadcasting(
+        test_func2,
+        (ColRef{Int64}(:a), 20)
+        )
 
-    res = eval_on_range(data, exec, 1:5:100)
-    @test res == data[:a][1:5:100] .* 2
+    exec = BroadcastExecutor(test_e)
+    res = eval_on_range(data, exec, 1:10:100)
+    @test res == data.a[1:10:100] .+ 20
+
+    test_e = BlockBroadcasting(
+        in,
+        (ColRef{Int64}(:a), Ref([1,11,21]))
+        )
+
+    exec = BroadcastExecutor(test_e)
+    res = eval_on_range(data, exec, 1:10:100)
     
+    @test res == in.(data.a[1:10:100], Ref([1,11,21]))
 
-    test_func2(a, b) = a/2 == b
-    test_b = BlockBroadcasting([Vector{Int64}, Vector{Float64}], (:a,:c), test_func2)
-    @test eltype(test_b) == Bool
+    @test_throws ArgumentError test_e = BlockBroadcasting(
+        in,
+        (ColRef{Int64}(:a), [1,11,21])
+        )
 
-    exec = BroadcastExecutor(test_b)
-    @test typeof(exec.buffer) <: BitArray
-
-    res = eval_on_range(data, exec, 1:100)
-    @test res == (@. data[:a]/2 == data[:c])
-
-
-    test_c = BlockBroadcasting(
-        [Vector{Int64}, typeof(test_b)], (:a, :e), 
-        (a, e) -> a + e
-    )
-
-    exec = BroadcastExecutor(test_c)
-    @test typeof(exec.buffer) == Vector{Int64}
-
-    res = eval_on_range(data, exec, 1:100)
-    println(res)=#
+    @test_throws ArgumentError test_e = BlockBroadcasting(
+        in,
+        (ColRef{Int64}(:a), zip([1,11,21], [1,11,21]))
+        )
+    
+    
 end

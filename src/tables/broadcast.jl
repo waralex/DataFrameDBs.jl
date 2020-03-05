@@ -6,16 +6,28 @@ end
 struct BlockBroadcasting{RT, F, Args<:Tuple}
     f::F
     args::Args
-    function BlockBroadcasting(func::F, args::Args) where {F<:Function, Args<:Tuple{Vararg{Union{<:ColRef, <:BlockBroadcasting}}}}                
-        types_tuple = _sig_tuple(args)        
+    function BlockBroadcasting(func::F, args::Args) where {F<:Function, Args<:Tuple}                
+        bargs = map(block_broadcastable, args)
+        types_tuple = _sig_tuple(bargs)        
         !hasmethod(func, types_tuple) && throw(ArgumentError("function $(func) hasn't method for columns types $(types_tuple)"))
         res_types = Base.return_types(func, types_tuple)
         (length(res_types) != 1) && throw(ArgumentError("funciton must have single return type"))        
-        new{res_types[1], F, Args}(func, args)
+        new{res_types[1], F, Args}(func, bargs)
     end    
 end
 
-_sig_tuple(args::Tuple) = (Base.eltype(args[1]), _sig_tuple(Base.tail(args))...)
+block_broadcastable(a::ColRef) = a
+block_broadcastable(a::BlockBroadcasting) = a
+block_broadcastable(a::T) where {T} = Base.Broadcast.broadcastable(a)
+
+function _check_sig_arg(a::T) where {T}
+    ndims(T) != 0 &&  throw(ArgumentError("Cannot do BlockBroadcasting with arguments with ndims > 0"))
+    return Base.eltype(a)
+end
+_check_sig_arg(a::ColRef) = Base.eltype(a)
+_check_sig_arg(a::BlockBroadcasting) = Base.eltype(a)
+_check_sig_arg(::AbstractArray) = throw(ArgumentError("Cannot do BlockBroadcasting with arrays"))
+_sig_tuple(args::Tuple) = (_check_sig_arg(args[1]), _sig_tuple(Base.tail(args))...)
 _sig_tuple(args::Tuple{}) = ()
 
 function required_columns(b::BlockBroadcasting)
@@ -59,6 +71,7 @@ _coltype_buffer(::Type{T}) where {T} = Vector{T}(undef, 0)
 _coltype_buffer(::Type{Bool}) = BitVector(undef, 0)
 _column_buffer(el::ColRef{T}) where {T} = NamedTuple{(el.name,)}((_coltype_buffer(T),))
 _column_buffer(el::BlockBroadcasting) = _columns_buffers(el.args)
+_column_buffer(el::T) where {T} = NamedTuple{(), Tuple{}}(())
 _columns_buffers(args::Tuple) = merge(_column_buffer(args[1]), _columns_buffers(Base.tail(args)))
 _columns_buffers(args::Tuple{T}) where {T} = _column_buffer(args[1])
 _columns_buffers(args::Tuple{}) = NamedTuple{(), Tuple{}}(())
@@ -71,6 +84,7 @@ _boradcasted_arg(buffers::NamedTuple, arg::ColRef) = buffers[arg.name]
 function _boradcasted_arg(buffers::NamedTuple, arg::BlockBroadcasting) 
     Base.Broadcast.broadcasted(arg.f, _boradcasted_args(buffers, arg.args)...)
 end
+_boradcasted_arg(buffers::NamedTuple, arg::T) where {T} = arg
 
 _boradcasted_args(buffers::NamedTuple, args::Tuple) = (
                     _boradcasted_arg(buffers, args[1]),

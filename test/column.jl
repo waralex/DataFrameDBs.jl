@@ -1,6 +1,6 @@
 using DataFrameDBs: DFTable, create_table, 
-selection, projection,
-DFView, proj_elem, required_columns, BlocksIterator, materialize, names, selproj, DFColumn
+selection, projection, rows,
+DFView, proj_elem, required_columns, BlocksIterator, materialize, names, selproj, DFColumn, map_to_column
 using DataFrames
 using InteractiveUtils
 @testset "columns" begin
@@ -44,6 +44,35 @@ using InteractiveUtils
 
     col3 = tb[:, :a=>(a)->a*4]
     @test col3 |>materialize == df.a .* 4
+
+    @test tb.a == tb[:, :a]
+    @test tb[1:20, :].a == tb[1:20, :a]
+
+    r = map_to_column(tb[:, [:a, :c]]) do a, c        
+        2a - c
+    end
+
+    r2 = map_to_column(tb) do a, b, c        
+        2a - c
+    end
+
+    @test r == r2 
+    @test materialize(r2) == @. 2*df.a - df.c
+
+    r3 = map_to_column(r2) do a
+        a * 3
+    end
+
+    @test materialize(r3) == @. (2*df.a - df.c) * 3
+
+    test = tb[:,:]
+    test.e = map_to_column(test) do a, b, c
+        a+c
+    end
+    
+    df.e = df.a .+ df.c
+    @test materialize(test) == df
+
 
     rm("test_data", force = true, recursive = true)
 end

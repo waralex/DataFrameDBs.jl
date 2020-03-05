@@ -14,9 +14,7 @@ make_materialization(meta ::ColumnMeta) where {T} = make_materialization(meta.ty
 make_materialization(table::DFTable, col::Symbol) = make_materialization(getmeta(table, col))
 
 function make_materialization(v::DFView)
-    req_columns = required_columns(v.projection)
-    req_meta = getmeta.(Ref(v.table), req_columns)
-    return (; zip(keys(v.projection.cols), make_materialization.(req_meta))...)
+    return make_materialization(v.projection)
 end
 
 

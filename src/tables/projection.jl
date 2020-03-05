@@ -29,7 +29,15 @@ function add(p::Projection, el::NamedTuple{Cols, <:Tuple{Vararg{<:Union{<:ColRef
     return Projection(merge(p.cols, el))
 end
 
+_col_materialization(::ColRef{T}) where {T} = Vector{T}(undef, 0)
+_col_materialization(::BlockBroadcasting{T}) where {T} = Vector{T}(undef, 0)
 
+_proj_materialization(cols::Tuple) = (_col_materialization(cols[1]), _proj_materialization(Base.tail(cols))...)
+_proj_materialization(cols::Tuple{}) = ()
+
+function make_materialization(p::Projection)
+    return (; zip(keys(p), _proj_materialization(values(p.cols)))...)
+end
 
 #All indexes not type stable, but it is rare operations
 function Base.getindex(p::Projection, i::Integer)
