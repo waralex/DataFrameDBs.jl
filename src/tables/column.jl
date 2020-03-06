@@ -7,6 +7,8 @@ struct DFColumn{T}
     end
 end
 
+Base.:(==)(a::DFColumn, b::DFColumn) = a.view == b.view
+
 Base.show(io::IO, c::DFColumn) = print(io, typeof(c))
 
 Base.eltype(::Type{DFColumn{T}}) where {T} = T
@@ -23,7 +25,11 @@ Base.ndims(c::Type{DFColumn}) = 1
 
 Base.IndexStyle(::Type{<:DFColumn}) = IndexLinear()
 
-Base.getindex(c::DFColumn, i::AbstractRange) = DFColumn(selection(c.view, i))
+function Base.getindex(c::DFColumn, i::AbstractRange) 
+ 
+ DFColumn(selection(c.view, i))
+end
+
 
 map_to_column(f::Function, c::DFColumn) = map_to_column(f, c.view)
 
@@ -49,6 +55,7 @@ function Base.copyto!(dest::AbstractVector, src::DFColumn)
 end
 
 function Base.getindex(c::DFColumn, i::Number)
+    println("aa ", i)
     tmp_view = selection(c.view, i)
     it = BlocksIterator(tmp_view)
     res = iterate(it)

@@ -6,11 +6,12 @@ end
 struct BlockBroadcasting{RT, F, Args<:Tuple}
     f::F
     args::Args
-    function BlockBroadcasting(func::F, args::Args) where {F<:Function, Args<:Tuple}                
+    function BlockBroadcasting(func::F, args::Args) where {F, Args<:Tuple}                
         bargs = map(block_broadcastable, args)
         types_tuple = _sig_tuple(bargs)        
         !hasmethod(func, types_tuple) && throw(ArgumentError("function $(func) hasn't method for columns types $(types_tuple)"))
         res_type = Base._return_type(func, types_tuple)
+        !isavailabletype(res_type) && throw(ArgumentError("$(res_type) is not available as column type"))
         new{res_type, F, Args}(func, bargs)
     end    
 end

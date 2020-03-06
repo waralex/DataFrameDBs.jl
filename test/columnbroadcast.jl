@@ -32,7 +32,7 @@ using Base.Broadcast: BroadcastStyle
     @test materialize(tb.a .* tb.c) == df.a .* df.c
     @test materialize(tb.a .== 10) == (df.a .== 10)
 
-    @test (tb.a .* df.a) == (df.a .* df.a)
+    #@test (tb.a .* df.a) == (df.a .* df.a)
 
     test_t = Vector{Int64}(undef, sz)
 
@@ -53,10 +53,11 @@ using Base.Broadcast: BroadcastStyle
     @test materialize(tb3) == df3
 
     v = DFView((a = tb.a .* 3, g = tb.a.*tb.c))
-    @test materialize(v) == DataFrame((a = tb.a .* 3, g = tb.a.*tb.c))
+    
+    @test materialize(v) == DataFrame((a = df.a .* 3, g = df.a.*df.c))
 
     v = DFView(a = tb.a .* 3, g = tb.a.*tb.c)
-    @test materialize(v) == DataFrame((a = tb.a .* 3, g = tb.a.*tb.c))
+    @test materialize(v) == DataFrame((a = df.a .* 3, g = df.a.*df.c))
 
     rm("test_data", force = true, recursive = true)
 end 

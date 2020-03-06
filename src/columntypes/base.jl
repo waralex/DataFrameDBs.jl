@@ -75,7 +75,7 @@ deserialize(a::Ast) = deserialize(a.name, a.childs...)
 
 deserialize(s::AbstractString) = deserialize(parse_typestring(s))
 
-function checktype(t::Type)
+function checktype(t::Type)    
     serialize(t)
     return t
 end
@@ -84,7 +84,9 @@ end
 typestring(t::Type{T}) where {T} = human_typestring(serialize(t))
 
 serialize(::Type{T}) where {T} = throw(UnsupportedType(T))
-deserialize(a::Val{N}, args...) where {N} = throw(UndefinedType(human_typestring(a, args...)))
+function deserialize(a::Val{N}, args...) where {N}     
+    throw(UndefinedType(human_typestring(a, args...)))
+end
 
 macro _trivia_serializes(args...)
     funcs = Expr[]
@@ -113,7 +115,12 @@ end
     Bool,
     Char,
     String,
-    Date,
-    DateTime,
-    Time 
+    
 )
+
+serialize(::Type{Date}) = Ast(Symbol(Date))
+serialize(::Type{DateTime}) = Ast(Symbol(DateTime))
+serialize(::Type{Time}) = Ast(Symbol(Time))
+deserialize(::Val{Symbol("Date")}) = Date
+deserialize(::Val{Symbol("DateTime")}) = DateTime
+deserialize(::Val{Symbol("Time")}) = Time

@@ -5,7 +5,7 @@ function table_stats(table::DFTable; as_df = true)
     
     ios = open_files(table, mode = :read)
     streams = BlockStream.(ios)
-    #println(result)
+    
     while !eof(first(streams))
         sizes = skip_block.(streams)
 
@@ -37,4 +37,16 @@ function table_stats(table::DFTable; as_df = true)
     push!(df, [Symbol("Table total"), "", totals.rows, totals.uncompressed, totals.compressed, totals.compression_ratio])
     
     return df
+end
+
+function _isavailableunion(::Type{Union{T, Missing}}) where {T} 
+    isbitstype(T) && return true
+    T == String && return true
+    return false
+end
+
+function isavailabletype(::Type{T}) where {T}
+    isbitstype(T) && return true
+    T == String && return true
+    return _isavailableunion(T)
 end

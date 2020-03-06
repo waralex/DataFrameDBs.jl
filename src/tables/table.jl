@@ -69,21 +69,23 @@ function add_column!(t::DFTable, name::Symbol, data; before::Union{Symbol, Nothi
     (name in names(t)) && throw(ArgumentError("Column :$name already exists"))
     nrow(t) != length(data) && throw(ArgumentError("Column and table have different sizes"))
     (!isnothing(before) && !(before in names(t))) && throw(KeyError(before))
-
+    
     new_id = isempty(t.meta.columns) ? 1 : maximum(m->m.id, t.meta.columns) + 1
     
-
+    !isavailabletype(eltype(data)) && throw(ArgumentError("$(eltype(data)) is not available as column type"))
 
     new_meta = ColumnMeta(new_id, name, eltype(data))
-
+    
     pos = isnothing(before) ?
             length(t.meta.columns) + 1 :
             findfirst(x->x.name == before, t.meta.columns) 
-
+    
     insert!(t.meta.columns, pos, new_meta)
+    
     write_table_meta(t)
     try
         make_column_file(t, new_meta)        
+
         write_column(t, name, data, show_progress = show_progress)
     catch e
         drop_column!(t, name)

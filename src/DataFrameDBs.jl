@@ -8,7 +8,7 @@ const FORMAT_VERSION = 1
 using .FlatStringsVectors
 import DataFrames, Tables
 import ProgressMeter
-import Dates
+using Dates
 export DFTable, DFTableMeta, ColumnTypes
 include("columntypes.jl")
 include("common.jl")
