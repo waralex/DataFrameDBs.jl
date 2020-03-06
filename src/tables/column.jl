@@ -20,6 +20,9 @@ Base.size(c::DFColumn, dim::Number) = dim == 1 ? nrow(c.view) : 1
 
 Base.length(c::DFColumn) = Base.size(c, 1)
 
+Base.lastindex(c::DFColumn) = nrow(c.view)
+    
+
 Base.ndims(c::DFColumn) = 1
 Base.ndims(c::Type{DFColumn}) = 1
 
@@ -29,6 +32,7 @@ function Base.getindex(c::DFColumn, i::AbstractRange)
  
  DFColumn(selection(c.view, i))
 end
+
 
 
 map_to_column(f::Function, c::DFColumn) = map_to_column(f, c.view)
