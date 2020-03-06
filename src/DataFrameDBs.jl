@@ -9,7 +9,7 @@ using .FlatStringsVectors
 import DataFrames, Tables
 import ProgressMeter
 using Dates
-export DFTable, DFTableMeta, ColumnTypes
+export DFView, rows, materialize, selection, projection, open_table, turnon_progress!, turnoff_progress!, head
 include("columntypes.jl")
 include("common.jl")
 include("tables.jl")
