@@ -121,7 +121,12 @@ function write_column_from_iterator(table::DFTable, name::Symbol, data; close_on
 end
 
 
-function insert(table::DFTable, rows; show_progress = false, close_on_done = true)
+"""
+    insert(table::DFTable, rows; show_progress = false)
+
+Insert rows to table. `rows` must support Tables.schema and Tables.rows interfaces
+"""
+function insert(table::DFTable, rows; show_progress = false)
     check_schema(table, rows)
     ios = open_files(table, mode = :rewrite)
     streams = BlockStream.(ios)
@@ -170,7 +175,7 @@ function insert(table::DFTable, rows; show_progress = false, close_on_done = tru
         
     end
     
-    close_on_done && close.(streams)
+    close.(streams)
     return table
 end
 

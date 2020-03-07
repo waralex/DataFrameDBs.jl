@@ -1,7 +1,11 @@
 abstract type Editable end
 abstract type ReadOnly end
 
+"""
+    DFTable
 
+Class that represent table. Do not instantate it directly, use [`create_table`](@ref) or [`open_table`](@ref)
+"""
 mutable struct DFTable
     path ::String
     meta ::DFTableMeta
@@ -22,7 +26,18 @@ function Base.show(io::IO, table::DFTable)
     println(table_stats(table))
 end
 
+"""
+    turnon_progress!(tb::DFTable)
+
+Turn on showing progress of all read operation with this table
+"""
 turnon_progress!(tb::DFTable) = tb.show_read_progress = true
+
+"""
+    turnoff_progress!(tb::DFTable)
+
+Turn off showing progress of all read operation with this table
+"""
 turnoff_progress!(tb::DFTable) = tb.show_read_progress = false
 
 isshow_progress(tb::DFTable) = tb.show_read_progress
@@ -45,13 +60,22 @@ row_index(t::DFTable) = t.row_index
 
 nrows(table::DFTable) = nrows(table[:,:])
 
+"""
+    rename_column!(table::DFTable, old::Symbol, new::Symbol)
+
+Rename column in table
+"""
 function rename_column!(t::DFTable, old::Symbol, new::Symbol)
     meta = getmeta(t, old)
     (new in names(t)) && throw(ArgumentError("Column :$new already exists")) 
     meta.name = new
     write_table_meta(t)
 end
+"""
+    drop_column!(table::DFTable, col::Symbol)
 
+Drop column of table
+"""
 function drop_column!(t::DFTable, col::Symbol)    
     
     res = findfirst(x->x.name == col, t.meta.columns)
@@ -64,7 +88,11 @@ function drop_column!(t::DFTable, col::Symbol)
 end
 
 
+"""
+    add_column!(table::DFTable, name::Symbol, data; before::Union{Symbol, Nothing} = nothing, show_progress = false)
 
+Add column to table `data` can be AbstractVector or Iteratable or DFColumn
+"""
 function add_column!(t::DFTable, name::Symbol, data; before::Union{Symbol, Nothing} = nothing, show_progress = false)
     (name in names(t)) && throw(ArgumentError("Column :$name already exists"))
     nrow(t) != length(data) && throw(ArgumentError("Column and table have different sizes"))

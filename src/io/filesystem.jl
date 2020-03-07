@@ -94,12 +94,19 @@ function open_files(table::DFTable, columns::Tuple{Vararg{Symbol}};mode = :read)
 end
 open_files(table::DFTable; mode = :read) = open_files(table, (names(table)...,), mode = mode)
 
+"""
+    drop_table!(table::DFTable)
+Drop table with all data and remove table dir
+"""
 function drop_table!(table::DFTable) 
     table_exists(table.path) && rm(table.path, force = true, recursive = true)
     table.is_opened = false
     return table
 end
-
+"""
+    truncate_table!(table::DFTable)
+Truncate table data
+"""
 function truncate_table!(table::DFTable) 
     table_exists(table.path) && rm(table.path, force = true, recursive = true)
 make_table_files(table)    

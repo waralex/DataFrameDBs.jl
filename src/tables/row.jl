@@ -5,7 +5,11 @@ mutable struct RowIterator{BlockItT}
         return new{typeof(block_it)}(block_it)
     end 
 end
-
+"""
+    rows(v::DFView)
+    rows(v::DFTable)
+Return by row iterator of table or view. Rows represented as NamedTuples
+"""
 rows(v::DFView) = RowIterator(v)
 rows(t::DFTable) = RowIterator(DFView(t))
 

@@ -18,7 +18,12 @@ function make_materialization(v::DFView)
 end
 
 
+"""
+    materialize(v::DFView)
+    materialize(table::DFTable)
 
+Materialize DFView or DFTable as DataFrame
+"""
 function materialize(v::DFView)
     result = make_materialization(v)
     for block in BlocksIterator(v)
@@ -29,7 +34,11 @@ function materialize(v::DFView)
     
     DataFrames.DataFrame(result, copycols = false)
 end
+"""
+    materialize(v::DFColumn)
 
+Materialize DFColumn{T} as Vector{T}. Materialize is more efficient then collect(T, c::DFColumn{T})
+"""
 function materialize(c::DFColumn)
     result = make_materialization(c.view)[1]
     for block in BlocksIterator(c.view)        
@@ -42,6 +51,12 @@ function materialize(table::DFTable)
     return materialize(DFView(table))
 end
 
+"""
+    head(v::DFView, rows = 10)
+    head(t::DFTable, rows = 10)
+
+Materialize first `rows` rows of DFView or DFTable
+"""
 head(v::DFView, rows = 10) = v[1:rows,:] |> materialize
 
 head(t::DFTable, rows = 10) = head(DFView(t), rows)

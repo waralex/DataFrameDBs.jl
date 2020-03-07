@@ -1,3 +1,8 @@
+"""
+    Ast
+
+Struct that represent type of column
+"""
 mutable struct Ast
     name ::Symbol
     childs ::Vector{Ast}
@@ -91,8 +96,9 @@ end
 macro _trivia_serializes(args...)
     funcs = Expr[]
     for arg in args
-        push!(funcs, quote serialize(::Type{$arg}) = Ast(Symbol($arg)) end )
-        push!(funcs, quote deserialize(::Val{Symbol($arg)}) = $arg end )
+        arg_string = string(arg)
+        push!(funcs, quote serialize(::Type{$arg}) = Ast(Symbol($arg_string)) end )
+        push!(funcs, quote deserialize(::Val{Symbol($arg_string)}) = $arg end )
     end
     return esc(:($(funcs...),))
 end
@@ -117,7 +123,40 @@ end
     String,
     
 )
+"""
+    serialize(::Type{T})::ColumnTypes.Ast
+    deserialize(::Val{Symb}, args::Vararg{Symbol})::Type
 
+Define rule of serialization  and desiralization of Julia type to column type string
+Define it to custom bits type for allowing to store this type in DFTable
+
+# Examples
+```Julia
+ColumnTypes.serialize(::Type{Date}) = Ast(Symbol("Date"))
+ColumnTypes.deserialize(::Val{Symbol("Date")}) = Date
+
+function ColumnTypes.serialize(::Type{Union{T, Missing}}) where {T} 
+    res = Ast(Symbol("Missing")) 
+    push!(res, serialize(T))
+    return res
+end
+ColumnTypes.deserialize(a::Val{Symbol("Missing")}, base) = Union{Missing, deserialize(base)}
+
+function ColumnTypes.serialize(t::Type{<:Tuple})
+    res = Ast(Symbol("Tuple")) 
+    for sub_type in t.types
+        push!(res, serialize(sub_type))
+    end
+    return res
+end
+function ColumnTypes.deserialize(a::Val{Symbol("Tuple")}, args...)
+    isempty(args) && throw(UndefinedType("Tuple"))
+    return Tuple{deserialize.(args)...}
+end
+
+
+````
+"""
 serialize(::Type{Date}) = Ast(Symbol(Date))
 serialize(::Type{DateTime}) = Ast(Symbol(DateTime))
 serialize(::Type{Time}) = Ast(Symbol(Time))

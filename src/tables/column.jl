@@ -1,3 +1,32 @@
+"""
+    DFColumn{T}
+
+Lazy representation of table column. Do not instantate it directly, use indexing of table or view.
+
+# Notes
+
+DFColumn is not AbstractVector, but it support iteration and getindex. Iteration is much more efficient then consequentially
+get index.
+You can materialize DFColumn to Vector with [materialize(c::DFColumn)](@ref)
+Broadcasting of DFColumn also supported. Broadcast which arguments is DFColumns and, optionally, scalars is DFColumn too.
+
+# Examples
+```julia
+t = open_table("test_table") #table with `price` column
+
+col = t.price
+
+count = length(col)
+
+price_condition = 10 .< t.price .< 40
+
+in_condition_count = sum(price_condition)
+
+in_condition = col[price_condition]
+
+first_100_in_condition_vector = materialize(in_condition[1:100])
+```
+"""
 struct DFColumn{T}
     view::DFView
     function DFColumn(view::DFView) 
@@ -29,10 +58,13 @@ Base.ndims(c::Type{DFColumn}) = 1
 Base.IndexStyle(::Type{<:DFColumn}) = IndexLinear()
 
 function Base.getindex(c::DFColumn, i::AbstractRange) 
- 
- DFColumn(selection(c.view, i))
+    DFColumn(selection(c.view, i))
 end
 
+function Base.getindex(c::DFColumn, i::DFColumn{Bool}) 
+    c.view.selection != i.view.selection && throw(ArgumentError("cols must have same selections"))
+    DFColumn(selection(c.view, i))
+end
 
 
 map_to_column(f::Function, c::DFColumn) = map_to_column(f, c.view)
@@ -93,7 +125,22 @@ function Base.iterate(c::DFColumn, state)
         block_data[1], (it, block_data, 1)
         )
 end
+"""
+    DFView(cols::NamedTuple{Cols, <:Tuple{Vararg{<:DFColumn}}})
+    DFView(;kwargs...)
 
+Make new view from DFColums. All columns must have same selection
+
+# Examples
+
+```julia
+df = DataFrame((a=collect(1:100), b = collect(1:100)))
+
+t = create_table("test", from = df)
+v = DFView(col1 = t.a .+ t.b, col2 = t.a .- t.b, col3 = t.a .* t.a)
+materialize(v)
+```
+"""
 function DFView(cols::NamedTuple{Cols, <:Tuple{Vararg{<:DFColumn}}}) where {Cols}
     table_selection = nothing
     for col in cols

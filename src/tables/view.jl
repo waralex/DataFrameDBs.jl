@@ -1,3 +1,28 @@
+"""
+    DFView
+
+Lazy view of table. Do not instantate it directly, use indexing of table
+
+# Notes 
+
+DFView is characterized by projection and selection. Projection is columns of view and selection is conditions and/or range of rows
+Indexing operations on the table are proxied to indexing on the full view of the table (i.e. view with no restrictions in selection and all table rows in projection).
+Columns of DFView also accessible as properties
+To get DataFrame from DFView use [materialize(v::DFView)](@ref)
+
+# Examples
+```julia
+df = DataFrame((a=collect(1:100), b = collect(1:100), c = collect(1:100)))
+t = create_table("test", from = df)
+t[:,:]  #full view of table
+v = t[:, [:a,:c]]
+v2 = v[1:20, :] # == t[1:20, [:a,:c]]
+v = t[:a=>(a)->a<50, :] #view with rows where value of column a less then 50
+v = t[(:a, :b)=>(a, b)->a + b < 50, :] #view with rows where sum of columns a and b less then 50
+v = t[t.a .+ t.b .< 50, :] #same as above, but using broadcast of columns
+v = t[:, (e = :a, k=(:a, :c)=>(a,c)->a+c)] #view with columns :e (projection of origin column :a) and column :k (sum of origin columns a and c)
+```julia 
+"""
 mutable struct DFView
     table::DFTable
     projection::Projection
@@ -112,7 +137,24 @@ end
 
 Base.getindex(v::DFTable, select::Any, project::Any) = Base.getindex(DFView(v), select, project)
 
+"""
+    map_to_column(f::Function, v::DFView)
+    map_to_column(f::Function, v::DFView)
 
+Return DFColumn by applying function to each row of DFView
+Result type of function must be supported by DFColumn
+
+# Examples
+
+```julia
+df = DataFrame((a=collect(1:100), b = collect(1:100), c = collect(1:100)))
+t = create_table("test", from = df)
+
+map_to_column(t[1:50, [:a,:c]]) do a, c 
+    return a < 10 ? a : b
+end
+```
+"""
 function map_to_column(f::Function, v::DFView)
     return v[:,names(v) => f]
 end

@@ -1,6 +1,11 @@
-function table_stats(table::DFTable; as_df = true)
+"""
+    table_stats(table::DFTable)
+
+Show row count and table space
+"""
+function table_stats(table::DFTable)
  meta = columns_meta(table)
-    isempty(table.meta.columns) && return as_df ? DataFrames.DataFrame : OrderedDict()
+    isempty(table.meta.columns) && DataFrames.DataFrame
     result = OrderedDict(Pair{Symbol, SizeStats}.(getproperty.(meta, :name), Ref(SizeStats())))
     
     ios = open_files(table, mode = :read)
@@ -13,9 +18,6 @@ function table_stats(table::DFTable; as_df = true)
             result[r[1]] += sizes[i]
         end
     end    
-
-    
-    !as_df && return result
 
     
     pretty = pretty_stats.(values(result))
@@ -42,6 +44,9 @@ end
 function _isavailableunion(::Type{Union{T, Missing}}) where {T} 
     isbitstype(T) && return true
     T == String && return true
+    return false
+end
+function _isavailableunion(::Type{Union})
     return false
 end
 
