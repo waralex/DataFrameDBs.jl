@@ -3,7 +3,11 @@
 The DateFrameDBs is the persistent, space efficient columnar database, inspired by [DataFrames](https://github.com/JuliaData/DataFrames.jl) and columnar databases like [ClickHouse](https://github.com/ClickHouse/ClickHouse). 
 It's experimental package, so, please report bugs by [opening an issue] (https://github.com/waralex/DataFrameDBs.jl/issues/new).
 
+
+
 ## Installation
+
+Julia 1.3 required
 
 The DataFrameDBs is not yet part of Julia package system, you can install it directly from github:
 ```julia
