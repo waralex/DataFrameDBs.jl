@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>DataFrameDBs.jl · DataFrameDBs</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="assets/documenter.js"></script><script src="siteinfo.js"></script><script src="../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-dark.css" data-theme-name="documenter-dark"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">DataFrameDBs</span></div><form class="docs-search" action="search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li class="is-active"><a class="tocitem" href>DataFrameDBs.jl</a><ul class="internal"><li><a class="tocitem" href="#Installation-1"><span>Installation</span></a></li><li><a class="tocitem" href="#Introduction-1"><span>Introduction</span></a></li><li><a class="tocitem" href="#Get-Started-1"><span>Get Started</span></a></li><li><a class="tocitem" href="#Real-Data-Example-1"><span>Real Data Example</span></a></li><li><a class="tocitem" href="#Public-API-1"><span>Public API</span></a></li><li><a class="tocitem" href="#Future-plans-1"><span>Future plans</span></a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>DataFrameDBs.jl</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>DataFrameDBs.jl</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/waralex/DataFrameDBs.jl/blob/master/docs/src/index.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="DataFrameDBs.jl-1"><a class="docs-heading-anchor" href="#DataFrameDBs.jl-1">DataFrameDBs.jl</a><a class="docs-heading-anchor-permalink" href="#DataFrameDBs.jl-1" title="Permalink"></a></h1><p>The DateFrameDBs is the persistent, space efficient columnar database, inspired by <a href="https://github.com/JuliaData/DataFrames.jl">DataFrames</a> and columnar databases like <a href="https://github.com/ClickHouse/ClickHouse">ClickHouse</a>. </p><p>The DateFrameDBs  allows you to work with a large amount of data that does not fit in memory</p><p>It&#39;s experimental package, so, please report bugs by <a href="https://github.com/waralex/DataFrameDBs.jl/issues/new">opening an issue</a>.</p><h2 id="Installation-1"><a class="docs-heading-anchor" href="#Installation-1">Installation</a><a class="docs-heading-anchor-permalink" href="#Installation-1" title="Permalink"></a></h2><p>Julia 1.3 required</p><p>The DataFrameDBs is not yet part of Julia package system, you can install it directly from github:</p><pre><code class="language-julia">import Pkg; Pkg.add(Pkg.PackageSpec(url = &quot;https://github.com/waralex/DataFrameDBs.jl.git&quot;))</code></pre><h2 id="Introduction-1"><a class="docs-heading-anchor" href="#Introduction-1">Introduction</a><a class="docs-heading-anchor-permalink" href="#Introduction-1" title="Permalink"></a></h2><p>The DataFramesDBs is a columnar database. It stores each data column as a separate file in a table folder. When writing to disk, each column is divided into blocks (the default block is 65536 elements), and each block is compressed using lz4 compression.</p><p>Currently DataFramesDB can store arrays for which eltype is one of:</p><ul><li>any subtype of Numbers</li><li>Date, DateTime, Time</li><li>Tuple with elements of types above</li><li>String</li><li>Union{Missing, T} where T is one types above</li></ul><p>You can also store any custom <code>isbitstype</code> type with little efforts</p><p>In the future, I plan to get support of arrays, nested arrays and categorial arrays</p><p>If you want data only from the specific columns with some condition mathcing, when only that data will be allocated, not entire table. For example if you want see the product name and price for sales in a particular category, then only that data will be materialized. </p><h2 id="Get-Started-1"><a class="docs-heading-anchor" href="#Get-Started-1">Get Started</a><a class="docs-heading-anchor-permalink" href="#Get-Started-1" title="Permalink"></a></h2><h3 id="Create-and-fill-test-table-1"><a class="docs-heading-anchor" href="#Create-and-fill-test-table-1">Create and fill test table</a><a class="docs-heading-anchor-permalink" href="#Create-and-fill-test-table-1" title="Permalink"></a></h3><p>Lets create empty table:</p><pre><code class="language-julia">julia&gt; using DataFrameDBs
+julia&gt; t = empty_table(&quot;test_table&quot;)</code></pre><p>Thats create dir <code>test_table</code> in you current directory and write meta of table to it</p><p>Lets add some columns to our table:</p><pre><code class="language-julia">julia&gt; size = 3000000
+julia&gt; add_column!(t, :id, 1:size, show_progress = true)
+Time: 0:00:00 writed: 3.0 MRows (16.27 MRows/sec), uncompressed size: 22.89 MB, compressed size: 11.45 MB, compression ratio: 2.0
+
+julia&gt; add_column!(t, :code, rand(1:1000, size), show_progress = true)
+Time: 0:00:00 writerd: 3.0 MRows (49.7 MRows/sec), uncompressed size: 22.89 MB, compressed size: 8.97 MB, compression ratio: 2.55
+
+julia&gt; brands = [&quot;apple&quot;, &quot;samsung&quot;, &quot;huawai&quot;, &quot;microsoft&quot;, &quot;dell&quot;, &quot;xbox&quot;, &quot;sony&quot;, &quot;intel&quot;]
+julia&gt; add_column!(t, :brand, rand(brands, size), show_progress = true)
+Time: 0:00:00 writerd: 3.0 MRows (19.91 MRows/sec), uncompressed size: 27.18 MB, compressed size: 9.54 MB, compression ratio: 2.85
+
+julia&gt; add_column!(t, :price, rand(1.:0.1:2000., size), show_progress = true)
+Time: 0:00:00 writerd: 3.0 MRows (20.34 MRows/sec), uncompressed size: 22.89 MB, compressed size: 11.85 MB, compression ratio: 1.93
+
+julia&gt; table_stats(t)
+5×6 DataFrames.DataFrame
+│ Row │ column      │ type    │ rows      │ uncompressed size │ compressed size │ compression ratio │
+│     │ Symbol      │ String  │ String    │ String            │ String          │ Float64           │
+├─────┼─────────────┼─────────┼───────────┼───────────────────┼─────────────────┼───────────────────┤
+│ 1   │ id          │ Int64   │ 3.0 MRows │ 22.89 MB          │ 11.45 MB        │ 2.0               │
+│ 2   │ code        │ Int64   │ 3.0 MRows │ 22.89 MB          │ 8.97 MB         │ 2.55              │
+│ 3   │ brand       │ String  │ 3.0 MRows │ 27.18 MB          │ 9.54 MB         │ 2.85              │
+│ 4   │ price       │ Float64 │ 3.0 MRows │ 22.89 MB          │ 11.85 MB        │ 1.93              │
+│ 5   │ Table total │         │ 3.0 MRows │ 95.84 MB          │ 41.82 MB        │ 2.29              │</code></pre><p>Now we have the table with 4 columns and 3 million row. it takes 42 MB of disk space and will allocate 95 MB of memory with full materialization. This table is stored on disc, so if you close REPL you can reopen it with</p><pre><code class="language-julia">julia&gt; t = open_table(&quot;test_table/&quot;)
+DFTable path: test_table/
+5×6 DataFrames.DataFrame
+│ Row │ column      │ type    │ rows      │ uncompressed size │ compressed size │ compression ratio │
+│     │ Symbol      │ String  │ String    │ String            │ String          │ Float64           │
+├─────┼─────────────┼─────────┼───────────┼───────────────────┼─────────────────┼───────────────────┤
+│ 1   │ id          │ Int64   │ 3.0 MRows │ 22.89 MB          │ 11.45 MB        │ 2.0               │
+│ 2   │ code        │ Int64   │ 3.0 MRows │ 22.89 MB          │ 8.97 MB         │ 2.55              │
+│ 3   │ brand       │ String  │ 3.0 MRows │ 27.18 MB          │ 9.54 MB         │ 2.85              │
+│ 4   │ price       │ Float64 │ 3.0 MRows │ 22.89 MB          │ 11.85 MB        │ 1.93              │
+│ 5   │ Table total │         │ 3.0 MRows │ 95.84 MB          │ 41.82 MB        │ 2.29              │</code></pre><p>You can materialize entire DFTable to DataFrame:</p><pre><code class="language-julia">julia&gt; materialize(t)
+3000000×4 DataFrames.DataFrame</code></pre><p>or can see the head of the table:</p><pre><code class="language-julia">julia&gt; head(t)
+10×4 DataFrames.DataFrame
+│ Row │ id    │ code  │ brand     │ price   │
+│     │ Int64 │ Int64 │ String    │ Float64 │
+├─────┼───────┼───────┼───────────┼─────────┤
+│ 1   │ 1     │ 434   │ sony      │ 413.2   │
+│ 2   │ 2     │ 384   │ xbox      │ 1533.5  │
+│ 3   │ 3     │ 928   │ huawai    │ 1988.1  │
+│ 4   │ 4     │ 644   │ xbox      │ 1566.4  │
+│ 5   │ 5     │ 794   │ apple     │ 194.4   │
+│ 6   │ 6     │ 330   │ huawai    │ 619.1   │
+│ 7   │ 7     │ 248   │ samsung   │ 781.0   │
+│ 8   │ 8     │ 766   │ samsung   │ 842.2   │
+│ 9   │ 9     │ 424   │ xbox      │ 48.2    │
+│ 10  │ 10    │ 783   │ microsoft │ 628.1   │</code></pre><h3 id="Selections-on-a-table-1"><a class="docs-heading-anchor" href="#Selections-on-a-table-1">Selections on a table</a><a class="docs-heading-anchor-permalink" href="#Selections-on-a-table-1" title="Permalink"></a></h3><p>The main advantage of DataFramesDB is that it only materializes the data that you need and when you need it</p><pre><code class="language-julia">julia&gt; view = t[:,[:brand,:price]]
+View of table test_table/
+Projection: brand=&gt;col(brand)::String; price=&gt;col(price)::Float64
+Selection:</code></pre><p><code>view</code> is lazy view of the table with 2 columns :brand and :price. Its only hold information about source table, projection and selection rules, but not data of table. You can materialize it with <code>materialize(view)</code> or use it in future selections</p><pre><code class="language-julia">julia&gt; view2 = view[1:10:end, :]
+View of table dev_files/test_table/
+Projection: brand=&gt;col(brand)::String; price=&gt;col(price)::Float64
+Selection: 1:10:2999991
+
+julia&gt; view = view[1:5:end, :]
+View of table dev_files/test_table/
+Projection: id=&gt;col(id)::Int64; code=&gt;col(code)::Int64; brand=&gt;col(brand)::String; price=&gt;col(price)::Float64
+Selection: 1:50:2999951
+
+julia&gt; view3 = view2[1:10, :]
+View of table dev_files/test_table/
+Projection: brand=&gt;col(brand)::String; price=&gt;col(price)::Float64
+Selection: 1:10:91
+
+julia&gt; view4 = view3[[1,4,5], :]
+View of table dev_files/test_table/
+Projection: brand=&gt;col(brand)::String; price=&gt;col(price)::Float64
+Selection: [1, 31, 41]</code></pre><p>Now materialization of view4 need only rows 1, 31 and 41, which  is  rows 1, 4 and 5 form every 5 out of every ten rows of origin table</p><pre><code class="language-julia">julia&gt; materialize(view4)
+3×2 DataFrames.DataFrame
+│ Row │ brand  │ price   │
+│     │ String │ Float64 │
+├─────┼────────┼─────────┤
+│ 1   │ sony   │ 413.2   │
+│ 2   │ huawai │ 1321.7  │
+│ 3   │ huawai │ 188.8   │</code></pre><p>Single column represented by type <code>DFColumn{T}</code> where <code>T</code> is the element type. The <code>DFColumn</code> is not a AbstractVector, but it support iterations and <code>getindex</code>. You can get a column from view with <code>view.&lt;column_name&gt;</code> or <code>view[:, :&lt;column_name&gt;]</code></p><pre><code class="language-julia">julia&gt; column = view.brand
+DataFrameDBs.DFColumn{String}
+
+julia&gt; view[:,:id]
+DataFrameDBs.DFColumn{Int64}</code></pre><p>The DFColumn is lazy too. It can be materialized to a vector with <code>materialize</code>, or it can be used with a function that supports iterators as arguments.</p><pre><code class="language-julia">julia&gt; unique(column)
+8-element Array{Any,1}:
+ &quot;sony&quot;
+ &quot;xbox&quot;
+ &quot;huawai&quot;
+ &quot;apple&quot;
+ &quot;samsung&quot;
+ &quot;microsoft&quot;
+ &quot;dell&quot;
+ &quot;intel&quot;</code></pre><p>In this example column is not fully materialized. Its materialize one block (65536 rows of source table) at time and send it to <code>unique</code>.</p><p>DFColumn can be broadcated. Broadcast of DFColumns and, if any, scalar vars is DFColumn too:</p><pre><code class="language-julia">julia&gt; t.price .* 10
+DataFrameDBs.DFColumn{Float64}
+
+julia&gt; t.code .&gt; t.id
+DataFrameDBs.DFColumn{Bool}</code></pre><p>At iterating, broadcast of DFColums read only required columns from disc, one block at time, and run broadcast function at that block. So iteration don&#39;t require full allocation of columns</p><p><code>DFColumn{Bool}</code> can be used as a row index in view.</p><pre><code class="language-julia">julia&gt; view = t[t.brand.==&quot;sony&quot;, :]
+View of table test_table/
+Projection: id=&gt;col(id)::Int64; code=&gt;col(code)::Int64; brand=&gt;col(brand)::String; price=&gt;col(price)::Float64
+Selection: ==(col(brand)::String, Base.RefValue{String}(&quot;sony&quot;))::Bool
+
+julia&gt; head(view)
+10×4 DataFrames.DataFrame
+│ Row │ id    │ code  │ brand  │ price   │
+│     │ Int64 │ Int64 │ String │ Float64 │
+├─────┼───────┼───────┼────────┼─────────┤
+│ 1   │ 1     │ 434   │ sony   │ 413.2   │
+│ 2   │ 11    │ 523   │ sony   │ 1643.4  │
+│ 3   │ 12    │ 753   │ sony   │ 785.1   │
+│ 4   │ 14    │ 408   │ sony   │ 1971.9  │
+│ 5   │ 21    │ 534   │ sony   │ 914.1   │
+│ 6   │ 24    │ 500   │ sony   │ 307.6   │
+│ 7   │ 46    │ 109   │ sony   │ 1537.2  │
+│ 8   │ 49    │ 621   │ sony   │ 761.0   │
+│ 9   │ 54    │ 689   │ sony   │ 1616.3  │
+│ 10  │ 55    │ 738   │ sony   │ 410.6   │</code></pre><p>You can construct new view from DFColumns, that have a similar selection:</p><pre><code class="language-julia">julia&gt; view = t[1:100:end, :]
+View of table test_table/
+Projection: id=&gt;col(id)::Int64; code=&gt;col(code)::Int64; brand=&gt;col(brand)::String; price=&gt;col(price)::Float64
+Selection: 1:100:2999901
+
+julia&gt; new_view = DFView(id = view.id, double_price = view.price.*2, id_plus_code = view.id.+view.code)
+View of table test_table/
+Projection: id=&gt;col(id)::Int64; double_price=&gt;*(col(price)::Float64, 2)::Float64; id_plus_code=&gt;+(col(id)::Int64, col(code)::Int64)::Int64
+Selection: 1:100:2999901
+
+julia&gt; head(new_view)
+10×3 DataFrames.DataFrame
+│ Row │ id    │ double_price │ id_plus_code │
+│     │ Int64 │ Float64      │ Int64        │
+├─────┼───────┼──────────────┼──────────────┤
+│ 1   │ 1     │ 826.4        │ 435          │
+│ 2   │ 101   │ 2546.0       │ 408          │
+│ 3   │ 201   │ 3624.0       │ 469          │
+│ 4   │ 301   │ 3783.4       │ 760          │
+│ 5   │ 401   │ 3851.4       │ 417          │
+│ 6   │ 501   │ 2455.0       │ 1030         │
+│ 7   │ 601   │ 1092.6       │ 1120         │
+│ 8   │ 701   │ 1737.4       │ 978          │
+│ 9   │ 801   │ 567.6        │ 1088         │
+│ 10  │ 901   │ 2537.8       │ 1429         │</code></pre><p>To drop test table use <code>drop_table!(t)</code> or just remove dir <code>test_table/</code> from disc</p><h2 id="Real-Data-Example-1"><a class="docs-heading-anchor" href="#Real-Data-Example-1">Real Data Example</a><a class="docs-heading-anchor-permalink" href="#Real-Data-Example-1" title="Permalink"></a></h2><h3 id="Import-data-1"><a class="docs-heading-anchor" href="#Import-data-1">Import data</a><a class="docs-heading-anchor-permalink" href="#Import-data-1" title="Permalink"></a></h3><p>I use <a href="https://www.kaggle.com/mkechinov/ecommerce-behavior-data-from-multi-category-store">this</a> dataset as example. Before start, please, download and unzip it (registraion on kaggle is required). This dataset contains 100 millions rows and take 14GB in csv format. Let&#39;s create the DataFrameDBs table from the first CSV file, it will take several minutes:</p><pre><code class="language-julia">julia&gt; using DataFrameDBs
+julia&gt; using CSV
+julia&gt; t = create_table(&quot;ecommerce&quot;, from = CSV.Rows(&quot;ecommerce-behavior-data-from-multi-category-store/2019-Oct.csv&quot;, reuse_row=true), show_progress=true)
+Time: 0:03:24 writerd: 42.45 MRows (207.12 KRows/sec), uncompressed size: 6.35 GB, compressed size: 2.15 GB, compression ratio: 2.95
+DFTable path: ecommerce
+10×6 DataFrames.DataFrame
+│ Row │ column        │ type                   │ rows        │ uncompressed size │ compressed size │ compression ratio │
+│     │ Symbol        │ String                 │ String      │ String            │ String          │ Float64           │
+├─────┼───────────────┼────────────────────────┼─────────────┼───────────────────┼─────────────────┼───────────────────┤
+│ 1   │ event_time    │ Union{Missing, String} │ 42.45 MRows │ 1.07 GB           │ 28.82 MB        │ 37.93             │
+│ 2   │ event_type    │ Union{Missing, String} │ 42.45 MRows │ 326.69 MB         │ 14.99 MB        │ 21.8              │
+│ 3   │ product_id    │ Union{Missing, String} │ 42.45 MRows │ 461.02 MB         │ 240.1 MB        │ 1.92              │
+│ 4   │ category_id   │ Union{Missing, String} │ 42.45 MRows │ 931.1 MB          │ 161.99 MB       │ 5.75              │
+│ 5   │ category_code │ Union{Missing, String} │ 42.45 MRows │ 782.07 MB         │ 179.64 MB       │ 4.35              │
+│ 6   │ brand         │ Union{Missing, String} │ 42.45 MRows │ 367.39 MB         │ 159.58 MB       │ 2.3               │
+│ 7   │ price         │ Union{Missing, String} │ 42.45 MRows │ 392.19 MB         │ 208.9 MB        │ 1.88              │
+│ 8   │ user_id       │ Union{Missing, String} │ 42.45 MRows │ 526.27 MB         │ 216.89 MB       │ 2.43              │
+│ 9   │ user_session  │ Union{Missing, String} │ 42.45 MRows │ 1.58 GB           │ 995.78 MB       │ 1.63              │
+│ 10  │ Table total   │                        │ 42.45 MRows │ 6.35 GB           │ 2.15 GB         │ 2.95              │</code></pre><p>I use the CSV.Rows as csv parser because it don&#39;t load entire csv to memory. The disadvantage of this approach is that the CSV.Rows does not determine column types - all columns are imported as Union{String, Missing}. You can use CSV.File for smaller datasets. Let&#39;s append second file of the dataset to the table:</p><pre><code class="language-julia">julia&gt; insert(t, CSV.Rows(&quot;ecommerce-behavior-data-from-multi-category-store/2019-Nov.csv&quot;, reuse_row=true), show_progress=true)
+Time: 0:05:35 writerd: 67.55 MRows (201.38 KRows/sec), uncompressed size: 10.09 GB, compressed size: 3.77 GB, compression ratio: 2.68
+DFTable path: ecommerce
+10×6 DataFrames.DataFrame
+│ Row │ column        │ type                   │ rows         │ uncompressed size │ compressed size │ compression ratio │
+│     │ Symbol        │ String                 │ String       │ String            │ String          │ Float64           │
+├─────┼───────────────┼────────────────────────┼──────────────┼───────────────────┼─────────────────┼───────────────────┤
+│ 1   │ event_time    │ Union{Missing, String} │ 109.95 MRows │ 2.76 GB           │ 59.22 MB        │ 47.81             │
+│ 2   │ event_type    │ Union{Missing, String} │ 109.95 MRows │ 845.2 MB          │ 43.02 MB        │ 19.65             │
+│ 3   │ product_id    │ Union{Missing, String} │ 109.95 MRows │ 1.17 GB           │ 630.31 MB       │ 1.9               │
+│ 4   │ category_id   │ Union{Missing, String} │ 109.95 MRows │ 2.36 GB           │ 425.3 MB        │ 5.67              │
+│ 5   │ category_code │ Union{Missing, String} │ 109.95 MRows │ 1.97 GB           │ 470.16 MB       │ 4.28              │
+│ 6   │ brand         │ Union{Missing, String} │ 109.95 MRows │ 956.34 MB         │ 418.92 MB       │ 2.28              │
+│ 7   │ price         │ Union{Missing, String} │ 109.95 MRows │ 1015.72 MB        │ 542.99 MB       │ 1.87              │
+│ 8   │ user_id       │ Union{Missing, String} │ 109.95 MRows │ 1.33 GB           │ 614.19 MB       │ 2.22              │
+│ 9   │ user_session  │ Union{Missing, String} │ 109.95 MRows │ 4.1 GB            │ 2.79 GB         │ 1.47              │
+│ 10  │ Table total   │                        │ 109.95 MRows │ 16.43 GB          │ 5.92 GB         │ 2.78              │</code></pre><p>For now we have table, that takes 6 GB on disc (compare with 14GB of origin csv). All colums have type Union{Missing, String}.  Let&#39;s see to our data:</p><pre><code class="language-julia">julia&gt; head(t)
+10×9 DataFrames.DataFrame
+│ Row │ event_time              │ event_type │ product_id │ category_id         │ category_code                       │ brand    │ price   │ user_id   │ user_session                         │
+│     │ Union{Missing, String}  │ String⍰    │ String⍰    │ String⍰             │ Union{Missing, String}              │ String⍰  │ String⍰ │ String⍰   │ Union{Missing, String}               │
+├─────┼─────────────────────────┼────────────┼────────────┼─────────────────────┼─────────────────────────────────────┼──────────┼─────────┼───────────┼──────────────────────────────────────┤
+│ 1   │ 2019-10-01 00:00:00 UTC │ view       │ 44600062   │ 2103807459595387724 │ missing                             │ shiseido │ 35.79   │ 541312140 │ 72d76fde-8bb3-4e00-8c23-a032dfed738c │
+│ 2   │ 2019-10-01 00:00:00 UTC │ view       │ 3900821    │ 2053013552326770905 │ appliances.environment.water_heater │ aqua     │ 33.20   │ 554748717 │ 9333dfbd-b87a-4708-9857-6336556b0fcc │
+│ 3   │ 2019-10-01 00:00:01 UTC │ view       │ 17200506   │ 2053013559792632471 │ furniture.living_room.sofa          │ missing  │ 543.10  │ 519107250 │ 566511c2-e2e3-422b-b695-cf8e6e792ca8 │
+│ 4   │ 2019-10-01 00:00:01 UTC │ view       │ 1307067    │ 2053013558920217191 │ computers.notebook                  │ lenovo   │ 251.74  │ 550050854 │ 7c90fc70-0e80-4590-96f3-13c02c18c713 │
+│ 5   │ 2019-10-01 00:00:04 UTC │ view       │ 1004237    │ 2053013555631882655 │ electronics.smartphone              │ apple    │ 1081.98 │ 535871217 │ c6bd7419-2748-4c56-95b4-8cec9ff8b80d │
+│ 6   │ 2019-10-01 00:00:05 UTC │ view       │ 1480613    │ 2053013561092866779 │ computers.desktop                   │ pulser   │ 908.62  │ 512742880 │ 0d0d91c2-c9c2-4e81-90a5-86594dec0db9 │
+│ 7   │ 2019-10-01 00:00:08 UTC │ view       │ 17300353   │ 2053013553853497655 │ missing                             │ creed    │ 380.96  │ 555447699 │ 4fe811e9-91de-46da-90c3-bbd87ed3a65d │
+│ 8   │ 2019-10-01 00:00:08 UTC │ view       │ 31500053   │ 2053013558031024687 │ missing                             │ luminarc │ 41.16   │ 550978835 │ 6280d577-25c8-4147-99a7-abc6048498d6 │
+│ 9   │ 2019-10-01 00:00:10 UTC │ view       │ 28719074   │ 2053013565480109009 │ apparel.shoes.keds                  │ baden    │ 102.71  │ 520571932 │ ac1cd4e5-a3ce-4224-a2d7-ff660a105880 │
+│ 10  │ 2019-10-01 00:00:11 UTC │ view       │ 1004545    │ 2053013555631882655 │ electronics.smartphone              │ huawei   │ 566.01  │ 537918940 │ 406c46ed-90a4-4787-a43b-59a410c1a5fb │</code></pre><h3 id="Prepare-data-1"><a class="docs-heading-anchor" href="#Prepare-data-1">Prepare data</a><a class="docs-heading-anchor-permalink" href="#Prepare-data-1" title="Permalink"></a></h3><p>Before transforming the data, enable the display of query progress for the table</p><pre><code class="language-julia">julia&gt; turnon_progress!(t)</code></pre><p>You can turn off it later with <code>turnoff_progress!(t)</code></p><p>Let&#39;s convert numeric columns to a numeric type using the category<em>id column example. First check is where missings in category</em>id</p><pre><code class="language-julia">julia&gt; sum(ismissing.(t.category_id))
+Time: 0:00:00 readed: 109.95 MRows (128.57 MRows/sec)
+Time: 0:00:07 readed: 109.95 MRows (14.4 MRows/sec)
+0</code></pre><p>There are 0 missings in column.  In this example we see progress info lines - first line show progress of reading block sizes in <code>length</code> call for column in internals of broadcast. Second show progress of reading data to ismissing check. As you can see sizes reads with speed of 128 Million rows per second, checks for missings perfoms with speed of 14 Million rows per second. Entire column don&#39;t materialized. It allocate only one block(65536 rows) at a time to perfom check.</p><p>Let&#39;s convert category_id to Int64 column.</p><p>First rename it:</p><pre><code class="language-julia">julia&gt; rename_column!(t, :category_id, :category_id_raw)</code></pre><p>Create DFColumn:</p><pre><code class="language-julia">c_id = parse.(Int64, t.category_id_raw)
+DataFrameDBs.DFColumn{Int64}
+
+materialize(c_id[1:10])
+10-element Array{Int64,1}:
+ 2103807459595387724
+ 2053013552326770905
+ 2053013559792632471
+ 2053013558920217191
+ 2053013555631882655
+ 2053013561092866779
+ 2053013553853497655
+ 2053013558031024687
+ 2053013565480109009</code></pre><p>Add new column before :category_column :</p><pre><code class="language-julia">julia&gt; add_column!(t, :category_id, c_id, before=:category_code)
+Time: 0:00:00 readed: 109.95 MRows (168.99 MRows/sec)
+Time: 0:00:00 readed: 109.95 MRows (241.71 MRows/sec)
+Time: 0:00:00 readed: 109.95 MRows (216.34 MRows/sec)
+Time: 0:00:14 readed: 109.95 MRows (7.81 MRows/sec)
+
+julia&gt; head(t)
+Time: 0:00:00 readed: 65.54 KRows (260.05 MRows/sec)
+10×10 DataFrames.DataFrame
+│ Row │ event_time              │ event_type │ product_id │ category_id_raw     │ category_id         │ category_code                       │ brand    │ price   │ user_id   │ user_session                         │
+│     │ Union{Missing, String}  │ String⍰    │ String⍰    │ String⍰             │ Int64               │ Union{Missing, String}              │ String⍰  │ String⍰ │ String⍰   │ Union{Missing, String}               │
+├─────┼─────────────────────────┼────────────┼────────────┼─────────────────────┼─────────────────────┼─────────────────────────────────────┼──────────┼─────────┼───────────┼──────────────────────────────────────┤
+│ 1   │ 2019-10-01 00:00:00 UTC │ view       │ 44600062   │ 2103807459595387724 │ 2103807459595387724 │ missing                             │ shiseido │ 35.79   │ 541312140 │ 72d76fde-8bb3-4e00-8c23-a032dfed738c │
+│ 2   │ 2019-10-01 00:00:00 UTC │ view       │ 3900821    │ 2053013552326770905 │ 2053013552326770905 │ appliances.environment.water_heater │ aqua     │ 33.20   │ 554748717 │ 9333dfbd-b87a-4708-9857-6336556b0fcc │
+│ 3   │ 2019-10-01 00:00:01 UTC │ view       │ 17200506   │ 2053013559792632471 │ 2053013559792632471 │ furniture.living_room.sofa          │ missing  │ 543.10  │ 519107250 │ 566511c2-e2e3-422b-b695-cf8e6e792ca8 │
+│ 4   │ 2019-10-01 00:00:01 UTC │ view       │ 1307067    │ 2053013558920217191 │ 2053013558920217191 │ computers.notebook                  │ lenovo   │ 251.74  │ 550050854 │ 7c90fc70-0e80-4590-96f3-13c02c18c713 │
+│ 5   │ 2019-10-01 00:00:04 UTC │ view       │ 1004237    │ 2053013555631882655 │ 2053013555631882655 │ electronics.smartphone              │ apple    │ 1081.98 │ 535871217 │ c6bd7419-2748-4c56-95b4-8cec9ff8b80d │
+│ 6   │ 2019-10-01 00:00:05 UTC │ view       │ 1480613    │ 2053013561092866779 │ 2053013561092866779 │ computers.desktop                   │ pulser   │ 908.62  │ 512742880 │ 0d0d91c2-c9c2-4e81-90a5-86594dec0db9 │
+│ 7   │ 2019-10-01 00:00:08 UTC │ view       │ 17300353   │ 2053013553853497655 │ 2053013553853497655 │ missing                             │ creed    │ 380.96  │ 555447699 │ 4fe811e9-91de-46da-90c3-bbd87ed3a65d │
+│ 8   │ 2019-10-01 00:00:08 UTC │ view       │ 31500053   │ 2053013558031024687 │ 2053013558031024687 │ missing                             │ luminarc │ 41.16   │ 550978835 │ 6280d577-25c8-4147-99a7-abc6048498d6 │
+│ 9   │ 2019-10-01 00:00:10 UTC │ view       │ 28719074   │ 2053013565480109009 │ 2053013565480109009 │ apparel.shoes.keds                  │ baden    │ 102.71  │ 520571932 │ ac1cd4e5-a3ce-4224-a2d7-ff660a105880 │
+│ 10  │ 2019-10-01 00:00:11 UTC │ view       │ 1004545    │ 2053013555631882655 │ 2053013555631882655 │ electronics.smartphone              │ huawei   │ 566.01  │ 537918940 │ 406c46ed-90a4-4787-a43b-59a410c1a5fb │</code></pre><p>As before the column is not fully allocated. It reads one by one blocks from broadcast <code>parse.(Int64, t.category_id_raw)</code> and writes it to disc</p><p>Finaly remove the old column</p><pre><code class="language-julia">julia&gt; drop_column!(t, :category_id_raw)
+DFTable path: ecommerce
+10×6 DataFrames.DataFrame
+│ Row │ column        │ type                   │ rows         │ uncompressed size │ compressed size │ compression ratio │
+│     │ Symbol        │ String                 │ String       │ String            │ String          │ Float64           │
+├─────┼───────────────┼────────────────────────┼──────────────┼───────────────────┼─────────────────┼───────────────────┤
+│ 1   │ event_time    │ Union{Missing, String} │ 109.95 MRows │ 2.76 GB           │ 59.22 MB        │ 47.81             │
+│ 2   │ event_type    │ Union{Missing, String} │ 109.95 MRows │ 845.2 MB          │ 43.02 MB        │ 19.65             │
+│ 3   │ product_id    │ Union{Missing, String} │ 109.95 MRows │ 1.17 GB           │ 630.31 MB       │ 1.9               │
+│ 4   │ category_id   │ Int64                  │ 109.95 MRows │ 838.86 MB         │ 298.06 MB       │ 2.81              │
+│ 5   │ category_code │ Union{Missing, String} │ 109.95 MRows │ 1.97 GB           │ 470.16 MB       │ 4.28              │
+│ 6   │ brand         │ Union{Missing, String} │ 109.95 MRows │ 956.34 MB         │ 418.92 MB       │ 2.28              │
+│ 7   │ price         │ Union{Missing, String} │ 109.95 MRows │ 1015.72 MB        │ 542.99 MB       │ 1.87              │
+│ 8   │ user_id       │ Union{Missing, String} │ 109.95 MRows │ 1.33 GB           │ 614.19 MB       │ 2.22              │
+│ 9   │ user_session  │ Union{Missing, String} │ 109.95 MRows │ 4.1 GB            │ 2.79 GB         │ 1.47              │
+│ 10  │ Table total   │                        │ 109.95 MRows │ 14.9 GB           │ 5.8 GB          │ 2.57              │
+
+julia&gt; head(t)
+Time: 0:00:00 readed: 65.54 KRows (2.25 MRows/sec)
+10×9 DataFrames.DataFrame
+│ Row │ event_time              │ event_type │ product_id │ category_id         │ category_code                       │ brand    │ price   │ user_id   │ user_session                         │
+│     │ Union{Missing, String}  │ String⍰    │ String⍰    │ Int64               │ Union{Missing, String}              │ String⍰  │ String⍰ │ String⍰   │ Union{Missing, String}               │
+├─────┼─────────────────────────┼────────────┼────────────┼─────────────────────┼─────────────────────────────────────┼──────────┼─────────┼───────────┼──────────────────────────────────────┤
+│ 1   │ 2019-10-01 00:00:00 UTC │ view       │ 44600062   │ 2103807459595387724 │ missing                             │ shiseido │ 35.79   │ 541312140 │ 72d76fde-8bb3-4e00-8c23-a032dfed738c │
+│ 2   │ 2019-10-01 00:00:00 UTC │ view       │ 3900821    │ 2053013552326770905 │ appliances.environment.water_heater │ aqua     │ 33.20   │ 554748717 │ 9333dfbd-b87a-4708-9857-6336556b0fcc │
+│ 3   │ 2019-10-01 00:00:01 UTC │ view       │ 17200506   │ 2053013559792632471 │ furniture.living_room.sofa          │ missing  │ 543.10  │ 519107250 │ 566511c2-e2e3-422b-b695-cf8e6e792ca8 │
+│ 4   │ 2019-10-01 00:00:01 UTC │ view       │ 1307067    │ 2053013558920217191 │ computers.notebook                  │ lenovo   │ 251.74  │ 550050854 │ 7c90fc70-0e80-4590-96f3-13c02c18c713 │
+│ 5   │ 2019-10-01 00:00:04 UTC │ view       │ 1004237    │ 2053013555631882655 │ electronics.smartphone              │ apple    │ 1081.98 │ 535871217 │ c6bd7419-2748-4c56-95b4-8cec9ff8b80d │
+│ 6   │ 2019-10-01 00:00:05 UTC │ view       │ 1480613    │ 2053013561092866779 │ computers.desktop                   │ pulser   │ 908.62  │ 512742880 │ 0d0d91c2-c9c2-4e81-90a5-86594dec0db9 │
+│ 7   │ 2019-10-01 00:00:08 UTC │ view       │ 17300353   │ 2053013553853497655 │ missing                             │ creed    │ 380.96  │ 555447699 │ 4fe811e9-91de-46da-90c3-bbd87ed3a65d │
+│ 8   │ 2019-10-01 00:00:08 UTC │ view       │ 31500053   │ 2053013558031024687 │ missing                             │ luminarc │ 41.16   │ 550978835 │ 6280d577-25c8-4147-99a7-abc6048498d6 │
+│ 9   │ 2019-10-01 00:00:10 UTC │ view       │ 28719074   │ 2053013565480109009 │ apparel.shoes.keds                  │ baden    │ 102.71  │ 520571932 │ ac1cd4e5-a3ce-4224-a2d7-ff660a105880 │
+│ 10  │ 2019-10-01 00:00:11 UTC │ view       │ 1004545    │ 2053013555631882655 │ electronics.smartphone              │ huawei   │ 566.01  │ 537918940 │ 406c46ed-90a4-4787-a43b-59a410c1a5fb │</code></pre><p>You can convert product<em>id, user</em>id and price in similar way.</p><p>Converting event_time is a bit more complicated:</p><pre><code class="language-julia">julia&gt; sum(ismissing.(t.event_time)) #check missings
+Time: 0:00:00 readed: 109.95 MRows (232.95 MRows/sec)
+Time: 0:00:06 readed: 109.95 MRows (17.64 MRows/sec)
+0
+julia&gt; rename_column!(t, :event_time, :event_time_raw)
+
+julia&gt; string_col = string.(t.event_time_raw) #get DFColumn{String} from DFColumn{Union{String, Missing}}
+
+julia&gt; date_convert(s)::DateTime = DateTime(parse.(Int64, SubString.(string.(s), (1:4, 6:7, 9:10, 12:13, 15:16, 18:19)))...) #Conversion function
+
+julia&gt; result_col = date_convert.(string_col)
+Time: 0:00:00 readed: 109.95 MRows (237.47 MRows/sec)
+DataFrameDBs.DFColumn{DateTime}
+
+julia&gt; add_column!(t, :event_time, result_col, before = :event_type)
+Time: 0:00:00 readed: 109.95 MRows (177.3 MRows/sec)
+Time: 0:00:00 readed: 109.95 MRows (229.81 MRows/sec)
+Time: 0:00:00 readed: 109.95 MRows (244.99 MRows/sec)
+Time: 0:00:43 readed: 109.95 MRows (2.54 MRows/sec)
+
+julia&gt; drop_column!(t, :event_time_raw)</code></pre><p>Finaly convert all String,Missing columns to String columns with replacing missings by empty strings</p><pre><code class="language-julia">julia&gt; rename_column!(t, :event_type, :event_type_raw)
+
+julia&gt; string_convert(x) = ismissing(x) ? &quot;&quot; : String(x)
+string_convert (generic function with 1 method)
+
+julia&gt; string_convert.(t.event_type_raw)
+Time: 0:00:00 readed: 109.95 MRows (174.5 MRows/sec)
+DataFrameDBs.DFColumn{String}
+
+julia&gt; add_column!(t, :event_type, string_convert.(t.event_type_raw), before = :product_id)
+Time: 0:00:00 readed: 109.95 MRows (240.52 MRows/sec)
+Time: 0:00:00 readed: 109.95 MRows (173.21 MRows/sec)
+Time: 0:00:00 readed: 109.95 MRows (229.99 MRows/sec)
+Time: 0:00:00 readed: 109.95 MRows (230.37 MRows/sec)
+Time: 0:00:06 readed: 109.95 MRows (17.9 MRows/sec)
+
+julia&gt; drop_column!(t, :event_type_raw)</code></pre><p>Other columns are converted in the same way.</p><p>Now we have the prepared table:</p><pre><code class="language-julia">ulia&gt; table_stats(t)
+10×6 DataFrames.DataFrame
+│ Row │ column        │ type     │ rows         │ uncompressed size │ compressed size │ compression ratio │
+│     │ Symbol        │ String   │ String       │ String            │ String          │ Float64           │
+├─────┼───────────────┼──────────┼──────────────┼───────────────────┼─────────────────┼───────────────────┤
+│ 1   │ event_time    │ DateTime │ 109.95 MRows │ 838.86 MB         │ 43.81 MB        │ 19.15             │
+│ 2   │ event_type    │ String   │ 109.95 MRows │ 845.2 MB          │ 43.02 MB        │ 19.65             │
+│ 3   │ product_id    │ Int64    │ 109.95 MRows │ 838.86 MB         │ 403.31 MB       │ 2.08              │
+│ 4   │ category_id   │ Int64    │ 109.95 MRows │ 838.86 MB         │ 298.06 MB       │ 2.81              │
+│ 5   │ category_code │ String   │ 109.95 MRows │ 1.97 GB           │ 467.32 MB       │ 4.31              │
+│ 6   │ brand         │ String   │ 109.95 MRows │ 956.34 MB         │ 418.3 MB        │ 2.29              │
+│ 7   │ price         │ Float64  │ 109.95 MRows │ 838.86 MB         │ 475.22 MB       │ 1.77              │
+│ 8   │ user_id       │ Int64    │ 109.95 MRows │ 838.86 MB         │ 424.92 MB       │ 1.97              │
+│ 9   │ user_session  │ String   │ 109.95 MRows │ 4.1 GB            │ 2.79 GB         │ 1.47              │
+│ 10  │ Table total   │          │ 109.95 MRows │ 11.92 GB          │ 5.3 GB          │ 2.25              │</code></pre><p>It&#39;s typed and takes up more than two times less disk space than csv</p><h3 id="Work-with-data-1"><a class="docs-heading-anchor" href="#Work-with-data-1">Work with data</a><a class="docs-heading-anchor-permalink" href="#Work-with-data-1" title="Permalink"></a></h3><p>Get unique event_type and brands:</p><pre><code class="language-julia">julia&gt; unique(t.event_type)
+Time: 0:00:09 readed: 109.95 MRows (11.14 MRows/sec)
+3-element Array{Any,1}:
+ &quot;view&quot;
+ &quot;purchase&quot;
+ &quot;cart&quot;
+
+julia&gt; unique(t.brand[t.brand .!= &quot;&quot;])
+Time: 0:00:00 readed: 109.95 MRows (193.31 MRows/sec)
+Time: 0:00:14 readed: 109.95 MRows (7.54 MRows/sec)
+4303-element Array{Any,1}:
+ &quot;shiseido&quot;
+ &quot;aqua&quot;
+ &quot;lenovo&quot;
+ &quot;apple&quot;
+ &quot;pulser&quot;
+ &quot;creed&quot;
+ &quot;luminarc&quot;
+ &quot;baden&quot;
+ &quot;huawei&quot;
+ ....</code></pre><p>Mean price of huawai and apple</p><pre><code class="language-julia">julia&gt; using Statistics
+julia&gt; mean(t.price[t.brand.==&quot;huawei&quot;])
+Time: 0:00:00 readed: 109.95 MRows (190.21 MRows/sec)
+Time: 0:00:04 readed: 109.95 MRows (22.55 MRows/sec)
+264.23702928355846
+
+julia&gt; mean(t.price[t.brand.==&quot;apple&quot;])
+Time: 0:00:00 readed: 109.95 MRows (192.56 MRows/sec)
+Time: 0:00:05 readed: 109.95 MRows (18.97 MRows/sec)
+828.5794773596991</code></pre><p>Materialize all rows, where price is more then 2000, event_type is &quot;purchase&quot; and brand is &quot;samsung&quot;</p><pre><code class="language-julia">julia&gt; t[(t.price.&gt;2000).&amp;(t.event_type.==&quot;purchase&quot;).&amp;(t.brand.==&quot;samsung&quot;), :] |&gt; materialize
+Time: 0:00:00 readed: 109.95 MRows (185.04 MRows/sec)
+Time: 0:00:00 readed: 109.95 MRows (221.92 MRows/sec)
+Time: 0:00:00 readed: 109.95 MRows (187.44 MRows/sec)
+Time: 0:00:11 readed: 109.95 MRows (9.83 MRows/sec)
+217×9 DataFrames.DataFrame
+│ Row │ event_time          │ event_type │ product_id │ category_id         │ category_code          │ brand   │ price   │ user_id   │ user_session                         │
+│     │ DateTime            │ String     │ Int64      │ Int64               │ String                 │ String  │ Float64 │ Int64     │ String                               │
+├─────┼─────────────────────┼────────────┼────────────┼─────────────────────┼────────────────────────┼─────────┼─────────┼───────────┼──────────────────────────────────────┤
+│ 1   │ 2019-10-01T06:33:37 │ purchase   │ 1802024    │ 2053013554415534427 │ electronics.video.tv   │ samsung │ 2573.79 │ 548673724 │ 0fa51c80-9a1d-40cc-a9c8-cb409a8f2baa │
+│ 2   │ 2019-10-02T16:02:30 │ purchase   │ 1802024    │ 2053013554415534427 │ electronics.video.tv   │ samsung │ 2573.79 │ 546970144 │ 9f1dea21-6679-4129-ba05-ed32147cdbc8 │
+│ 3   │ 2019-10-05T08:54:49 │ purchase   │ 1802024    │ 2053013554415534427 │ electronics.video.tv   │ samsung │ 2573.79 │ 534273035 │ 419cd92d-0395-48ed-86bc-293d0a7e44fb │
+│ 4   │ 2019-10-05T09:37:14 │ purchase   │ 1802024    │ 2053013554415534427 │ electronics.video.tv   │ samsung │ 2573.79 │ 555860702 │ e9f509b7-6cbb-43ce-b877-3a08d197b73c │
+......
+│ 215 │ 2019-11-30T20:37:32 │ purchase   │ 1005284    │ 2053013555631882655 │ electronics.smartphone │ samsung │ 2562.49 │ 556588365 │ 6a939884-9605-406b-a5c8-45e1a31e9956 │
+│ 216 │ 2019-11-30T22:27:16 │ purchase   │ 100015658  │ 2053013555631882655 │ electronics.smartphone │ samsung │ 2562.49 │ 512762058 │ 8b65dc47-baaf-4348-8db6-3801b2ff13f9 │
+│ 217 │ 2019-11-30T22:28:47 │ purchase   │ 100015658  │ 2053013555631882655 │ electronics.smartphone │ samsung │ 2562.49 │ 512762058 │ 53effbbc-7cc9-4e37-9d69-136b02cb88e9 │</code></pre><p>Check above condition only on each 10th row of the table:</p><pre><code class="language-julia">v = t[1:10:end, :]
+Time: 0:00:00 readed: 109.95 MRows (221.21 MRows/sec)
+View of table ecommerce
+Projection: event_time=&gt;col(event_time)::Dates.DateTime; event_type=&gt;col(event_type)::String; product_id=&gt;col(product_id)::Int64; category_id=&gt;col(category_id)::Int64; category_code=&gt;col(category_code)::String; brand=&gt;col(brand)::String; price=&gt;col(price)::Float64; user_id=&gt;col(user_id)::Int64; user_session=&gt;col(user_session)::String
+Selection: 1:10:109950741
+
+julia&gt; v[(v.price.&gt;2000).&amp;(v.event_type.==&quot;purchase&quot;).&amp;(v.brand.==&quot;samsung&quot;), :] |&gt; materialize
+Time: 0:00:00 readed: 109.95 MRows (538.88 MRows/sec)
+Time: 0:00:00 readed: 109.95 MRows (597.39 MRows/sec)
+Time: 0:00:00 readed: 109.95 MRows (491.73 MRows/sec)
+Time: 0:00:02 readed: 109.95 MRows (40.87 MRows/sec)
+23×9 DataFrames.DataFrame
+│ Row │ event_time          │ event_type │ product_id │ category_id         │ category_code          │ brand   │ price   │ user_id   │ user_session                         │
+│     │ Dates.DateTime      │ String     │ Int64      │ Int64               │ String                 │ String  │ Float64 │ Int64     │ String                               │
+├─────┼─────────────────────┼────────────┼────────────┼─────────────────────┼────────────────────────┼─────────┼─────────┼───────────┼──────────────────────────────────────┤
+│ 1   │ 2019-10-29T11:20:54 │ purchase   │ 1800579    │ 2053013554415534427 │ electronics.video.tv   │ samsung │ 2201.68 │ 563223250 │ 8f1e2791-72cf-4f2f-9782-4f064771b20b │
+│ 2   │ 2019-11-01T19:25:50 │ purchase   │ 1802024    │ 2053013554415534427 │ electronics.video.tv   │ samsung │ 2574.04 │ 562294362 │ f3b2be78-853e-4627-9540-8a1a02ff6bdd │
+│ 3   │ 2019-11-10T17:48:23 │ purchase   │ 1005284    │ 2053013555631882655 │ electronics.smartphone │ samsung │ 2562.49 │ 569266155 │ 173075bd-dfe1-43ae-9b3a-82639936a6ea │
+│ 4   │ 2019-11-11T16:52:10 │ purchase   │ 1005284    │ 2053013555631882655 │ electronics.smartphone │ samsung │ 2562.49 │ 513105762 │ 1ac781e3-db0c-48e6-a332-46562402ccc9 │
+│ 5   │ 2019-11-13T08:57:56 │ purchase   │ 1802024    │ 2053013554415534427 │ electronics.video.tv   │ samsung │ 2573.79 │ 567131154 │ e4fc43ef-36c2-4f2d-9512-0cfcf1126d4a │
+│ 6   │ 2019-11-16T13:01:29 │ purchase   │ 1802024    │ 2053013554415534427 │ electronics.video.tv   │ samsung │ 2573.79 │ 518371713 │ 7934aeef-32df-4eb3-8f9f-d873a97d2c60 │
+│ 7   │ 2019-11-16T15:10:15 │ purchase   │ 1802024    │ 2053013554415534427 │ electronics.video.tv   │ samsung │ 2573.79 │ 572245478 │ 8e4414a3-61e5-461c-a1e2-0bc9b53db381 │
+.........</code></pre><p>Calculate sum of prices for rows, matching condition above:</p><pre><code class="language-julia">julia&gt; using Statistics
+
+julia&gt; mean(v[(v.price.&gt;2000).&amp;(v.event_type.==&quot;purchase&quot;).&amp;(v.brand.==&quot;samsung&quot;), :price])
+Time: 0:00:00 readed: 109.95 MRows (475.72 MRows/sec)
+Time: 0:00:00 readed: 109.95 MRows (428.33 MRows/sec)
+Time: 0:00:00 readed: 109.95 MRows (553.17 MRows/sec)
+Time: 0:00:02 readed: 109.95 MRows (51.44 MRows/sec)
+2546.1417391304344</code></pre><h2 id="Public-API-1"><a class="docs-heading-anchor" href="#Public-API-1">Public API</a><a class="docs-heading-anchor-permalink" href="#Public-API-1" title="Permalink"></a></h2><article class="docstring"><header><a class="docstring-binding" id="DataFrameDBs.DFView" href="#DataFrameDBs.DFView"><code>DataFrameDBs.DFView</code></a> — <span class="docstring-category">Type</span></header><section><div><pre><code class="language-julia">DFView</code></pre><p>Lazy view of table. Do not instantate it directly, use indexing of table</p><p><strong>Notes</strong></p><p>DFView is characterized by projection and selection. Projection is columns of view and selection is conditions and/or range of rows Indexing operations on the table are proxied to indexing on the full view of the table (i.e. view with no restrictions in selection and all table rows in projection). Columns of DFView also accessible as properties To get DataFrame from DFView use <a href="@ref">materialize(v::DFView)</a></p><p><strong>Examples</strong></p><pre><code class="language-julia">df = DataFrame((a=collect(1:100), b = collect(1:100), c = collect(1:100)))
+t = create_table(&quot;test&quot;, from = df)
+t[:,:]  #full view of table
+v = t[:, [:a,:c]]
+v2 = v[1:20, :] # == t[1:20, [:a,:c]]
+v = t[:a=&gt;(a)-&gt;a&lt;50, :] #view with rows where value of column a less then 50
+v = t[(:a, :b)=&gt;(a, b)-&gt;a + b &lt; 50, :] #view with rows where sum of columns a and b less then 50
+v = t[t.a .+ t.b .&lt; 50, :] #same as above, but using broadcast of columns
+v = t[:, (e = :a, k=(:a, :c)=&gt;(a,c)-&gt;a+c)] #view with columns :e (projection of origin column :a) and column :k (sum of origin columns a and c)</code></pre><p>julia </p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/waralex/DataFrameDBs.jl/blob/ec71bf8c83230601a2523e20765e660d54e98e64/src/tables/view.jl#L1-L25">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="DataFrameDBs.DFTable" href="#DataFrameDBs.DFTable"><code>DataFrameDBs.DFTable</code></a> — <span class="docstring-category">Type</span></header><section><div><pre><code class="language-julia">DFTable</code></pre><p>Class that represent table. Do not instantate it directly, use <a href="#DataFrameDBs.create_table"><code>create_table</code></a> or <a href="#DataFrameDBs.open_table"><code>open_table</code></a></p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/waralex/DataFrameDBs.jl/blob/ec71bf8c83230601a2523e20765e660d54e98e64/src/tables/table.jl#L4-L8">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="DataFrameDBs.DFColumn" href="#DataFrameDBs.DFColumn"><code>DataFrameDBs.DFColumn</code></a> — <span class="docstring-category">Type</span></header><section><div><pre><code class="language-julia">DFColumn{T}</code></pre><p>Lazy representation of table column. Do not instantate it directly, use indexing of table or view.</p><p><strong>Notes</strong></p><p>DFColumn is not AbstractVector, but it support iteration and getindex. Iteration is much more efficient then consequentially get index. You can materialize DFColumn to Vector with <a href="@ref">materialize(c::DFColumn)</a> Broadcasting of DFColumn also supported. Broadcast which arguments is DFColumns and, optionally, scalars is DFColumn too.</p><p><strong>Examples</strong></p><pre><code class="language-julia">t = open_table(&quot;test_table&quot;) #table with `price` column
+
+col = t.price
+
+count = length(col)
+
+price_condition = 10 .&lt; t.price .&lt; 40
+
+in_condition_count = sum(price_condition)
+
+in_condition = col[price_condition]
+
+first_100_in_condition_vector = materialize(in_condition[1:100])</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/waralex/DataFrameDBs.jl/blob/ec71bf8c83230601a2523e20765e660d54e98e64/src/tables/column.jl#L1-L29">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="DataFrameDBs.create_table" href="#DataFrameDBs.create_table"><code>DataFrameDBs.create_table</code></a> — <span class="docstring-category">Function</span></header><section><div><pre><code class="language-julia">create_table(path::String; from, column_names ::Union{AbstractVector{Symbol}, AbstractVector{String}}, types ::AbstractVector{&lt;:Type}; block_size = DEFAULT_BLOCK_SIZE, show_progress = false)</code></pre><p>Create new table</p><p><strong>Arguments</strong></p><ul><li><code>path</code> - directory to story table. Must not exists</li><li><code>column_names</code> - names of columns</li><li><code>types</code> - types of columns</li><li><code>block_size</code> - count of rows in processing block default is 65536</li></ul><p><strong>Examples</strong></p><pre><code class="language-julia">import CSV
+create_table(&quot;new_table&quot;, [:a, :b, :c], [Int64, String, Float64])
+</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/waralex/DataFrameDBs.jl/blob/ec71bf8c83230601a2523e20765e660d54e98e64/src/tables/creators.jl#L18-L35">source</a></section><section><div><pre><code class="language-none">create_table(path::String; from, block_size = DEFAULT_BLOCK_SIZE, show_progress = false)</code></pre><p>Create table from existing data </p><p><strong>Arguments</strong></p><ul><li><code>path</code> - directory to story table. Must not exists</li><li><code>from</code> - exists data to insert to table. Must support Tables.schema and Tables.rows interfaces</li><li><code>block_size</code> - count of rows in processing block default is 65536</li><li><code>show_progress</code> - show progress string while inserting data</li></ul><p><strong>Examples</strong></p><pre><code class="language-julia">import CSV
+create_table(&quot;table_from_csv&quot;, from = CSV.Rows(&quot;some.csv&quot;), show_progress = true)
+
+using DataFrames
+df = DataFrame((a=collect(1:100), b=collect(1:100)))
+create_table(&quot;table_from_df&quot;, from = df, show_progress = true)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/waralex/DataFrameDBs.jl/blob/ec71bf8c83230601a2523e20765e660d54e98e64/src/tables/creators.jl#L60-L80">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="DataFrameDBs.open_table" href="#DataFrameDBs.open_table"><code>DataFrameDBs.open_table</code></a> — <span class="docstring-category">Function</span></header><section><div><pre><code class="language-julia">open_table(path::String)</code></pre><p>Open existing table</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/waralex/DataFrameDBs.jl/blob/ec71bf8c83230601a2523e20765e660d54e98e64/src/tables/creators.jl#L2-L6">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="DataFrameDBs.empty_table" href="#DataFrameDBs.empty_table"><code>DataFrameDBs.empty_table</code></a> — <span class="docstring-category">Function</span></header><section><div><pre><code class="language-julia">create_table(path::String; from, column_names ::Union{AbstractVector{Symbol}, AbstractVector{String}}, types ::AbstractVector{&lt;:Type}; block_size = DEFAULT_BLOCK_SIZE, show_progress = false)</code></pre><p>Create new empty table</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/waralex/DataFrameDBs.jl/blob/ec71bf8c83230601a2523e20765e660d54e98e64/src/tables/creators.jl#L46-L50">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="DataFrameDBs.drop_table!" href="#DataFrameDBs.drop_table!"><code>DataFrameDBs.drop_table!</code></a> — <span class="docstring-category">Function</span></header><section><div><pre><code class="language-julia">drop_table!(table::DFTable)</code></pre><p>Drop table with all data and remove table dir</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/waralex/DataFrameDBs.jl/blob/ec71bf8c83230601a2523e20765e660d54e98e64/src/io/filesystem.jl#L97-L100">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="DataFrameDBs.truncate_table!" href="#DataFrameDBs.truncate_table!"><code>DataFrameDBs.truncate_table!</code></a> — <span class="docstring-category">Function</span></header><section><div><pre><code class="language-julia">truncate_table!(table::DFTable)</code></pre><p>Truncate table data</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/waralex/DataFrameDBs.jl/blob/ec71bf8c83230601a2523e20765e660d54e98e64/src/io/filesystem.jl#L106-L109">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="DataFrameDBs.add_column!" href="#DataFrameDBs.add_column!"><code>DataFrameDBs.add_column!</code></a> — <span class="docstring-category">Function</span></header><section><div><pre><code class="language-julia">add_column!(table::DFTable, name::Symbol, data; before::Union{Symbol, Nothing} = nothing, show_progress = false)</code></pre><p>Add column to table <code>data</code> can be AbstractVector or Iteratable or DFColumn</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/waralex/DataFrameDBs.jl/blob/ec71bf8c83230601a2523e20765e660d54e98e64/src/tables/table.jl#L91-L95">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="DataFrameDBs.rename_column!" href="#DataFrameDBs.rename_column!"><code>DataFrameDBs.rename_column!</code></a> — <span class="docstring-category">Function</span></header><section><div><pre><code class="language-julia">rename_column!(table::DFTable, old::Symbol, new::Symbol)</code></pre><p>Rename column in table</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/waralex/DataFrameDBs.jl/blob/ec71bf8c83230601a2523e20765e660d54e98e64/src/tables/table.jl#L63-L67">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="DataFrameDBs.drop_column!" href="#DataFrameDBs.drop_column!"><code>DataFrameDBs.drop_column!</code></a> — <span class="docstring-category">Function</span></header><section><div><pre><code class="language-julia">drop_column!(table::DFTable, col::Symbol)</code></pre><p>Drop column of table</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/waralex/DataFrameDBs.jl/blob/ec71bf8c83230601a2523e20765e660d54e98e64/src/tables/table.jl#L74-L78">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="DataFrameDBs.turnon_progress!" href="#DataFrameDBs.turnon_progress!"><code>DataFrameDBs.turnon_progress!</code></a> — <span class="docstring-category">Function</span></header><section><div><pre><code class="language-julia">turnon_progress!(tb::DFTable)</code></pre><p>Turn on showing progress of all read operation with this table</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/waralex/DataFrameDBs.jl/blob/ec71bf8c83230601a2523e20765e660d54e98e64/src/tables/table.jl#L29-L33">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="DataFrameDBs.turnoff_progress!" href="#DataFrameDBs.turnoff_progress!"><code>DataFrameDBs.turnoff_progress!</code></a> — <span class="docstring-category">Function</span></header><section><div><pre><code class="language-julia">turnoff_progress!(tb::DFTable)</code></pre><p>Turn off showing progress of all read operation with this table</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/waralex/DataFrameDBs.jl/blob/ec71bf8c83230601a2523e20765e660d54e98e64/src/tables/table.jl#L36-L40">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="DataFrameDBs.insert" href="#DataFrameDBs.insert"><code>DataFrameDBs.insert</code></a> — <span class="docstring-category">Function</span></header><section><div><pre><code class="language-julia">insert(table::DFTable, rows; show_progress = false)</code></pre><p>Insert rows to table. <code>rows</code> must support Tables.schema and Tables.rows interfaces</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/waralex/DataFrameDBs.jl/blob/ec71bf8c83230601a2523e20765e660d54e98e64/src/io/columns.jl#L125-L129">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="DataFrameDBs.materialize" href="#DataFrameDBs.materialize"><code>DataFrameDBs.materialize</code></a> — <span class="docstring-category">Function</span></header><section><div><pre><code class="language-julia">materialize(v::DFView)
+materialize(table::DFTable)</code></pre><p>Materialize DFView or DFTable as DataFrame</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/waralex/DataFrameDBs.jl/blob/ec71bf8c83230601a2523e20765e660d54e98e64/src/tables/materialization.jl#L21-L26">source</a></section><section><div><pre><code class="language-none">materialize(v::DFColumn)</code></pre><p>Materialize DFColumn{T} as Vector{T}. Materialize is more efficient then collect(T, c::DFColumn{T})</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/waralex/DataFrameDBs.jl/blob/ec71bf8c83230601a2523e20765e660d54e98e64/src/tables/materialization.jl#L37-L41">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="DataFrameDBs.head" href="#DataFrameDBs.head"><code>DataFrameDBs.head</code></a> — <span class="docstring-category">Function</span></header><section><div><pre><code class="language-julia">head(v::DFView, rows = 10)
+head(t::DFTable, rows = 10)</code></pre><p>Materialize first <code>rows</code> rows of DFView or DFTable</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/waralex/DataFrameDBs.jl/blob/ec71bf8c83230601a2523e20765e660d54e98e64/src/tables/materialization.jl#L54-L59">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="DataFrameDBs.rows" href="#DataFrameDBs.rows"><code>DataFrameDBs.rows</code></a> — <span class="docstring-category">Function</span></header><section><div><pre><code class="language-julia">rows(v::DFView)
+rows(v::DFTable)</code></pre><p>Return by row iterator of table or view. Rows represented as NamedTuples</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/waralex/DataFrameDBs.jl/blob/ec71bf8c83230601a2523e20765e660d54e98e64/src/tables/row.jl#L8-L12">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="DataFrameDBs.map_to_column" href="#DataFrameDBs.map_to_column"><code>DataFrameDBs.map_to_column</code></a> — <span class="docstring-category">Function</span></header><section><div><pre><code class="language-julia">map_to_column(f::Function, v::DFView)
+map_to_column(f::Function, v::DFView)</code></pre><p>Return DFColumn by applying function to each row of DFView Result type of function must be supported by DFColumn</p><p><strong>Examples</strong></p><pre><code class="language-julia">df = DataFrame((a=collect(1:100), b = collect(1:100), c = collect(1:100)))
+t = create_table(&quot;test&quot;, from = df)
+
+map_to_column(t[1:50, [:a,:c]]) do a, c 
+    return a &lt; 10 ? a : b
+end</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/waralex/DataFrameDBs.jl/blob/ec71bf8c83230601a2523e20765e660d54e98e64/src/tables/view.jl#L140-L157">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="DataFrameDBs.table_stats" href="#DataFrameDBs.table_stats"><code>DataFrameDBs.table_stats</code></a> — <span class="docstring-category">Function</span></header><section><div><pre><code class="language-julia">table_stats(table::DFTable)</code></pre><p>Show row count and table space</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/waralex/DataFrameDBs.jl/blob/ec71bf8c83230601a2523e20765e660d54e98e64/src/tables/misc.jl#L1-L5">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="DataFrameDBs.ColumnTypes.serialize" href="#DataFrameDBs.ColumnTypes.serialize"><code>DataFrameDBs.ColumnTypes.serialize</code></a> — <span class="docstring-category">Function</span></header><section><div><pre><code class="language-julia">serialize(::Type{T})::ColumnTypes.Ast
+deserialize(::Val{Symb}, args::Vararg{Symbol})::Type</code></pre><p>Define rule of serialization  and desiralization of Julia type to column type string Define it to custom bits type for allowing to store this type in DFTable</p><p><strong>Examples</strong></p><pre><code class="language-julia">
+ColumnTypes.serialize(::Type{Date}) = Ast(Symbol(&quot;Date&quot;))
+ColumnTypes.deserialize(::Val{Symbol(&quot;Date&quot;)}) = Date
+
+function ColumnTypes.serialize(::Type{Union{T, Missing}}) where {T} 
+    res = Ast(Symbol(&quot;Missing&quot;)) 
+    push!(res, serialize(T))
+    return res
+end
+ColumnTypes.deserialize(a::Val{Symbol(&quot;Missing&quot;)}, base) = Union{Missing, deserialize(base)}
+
+function ColumnTypes.serialize(t::Type{&lt;:Tuple})
+    res = Ast(Symbol(&quot;Tuple&quot;)) 
+    for sub_type in t.types
+        push!(res, serialize(sub_type))
+    end
+    return res
+end
+function ColumnTypes.deserialize(a::Val{Symbol(&quot;Tuple&quot;)}, args...)
+    isempty(args) &amp;&amp; throw(UndefinedType(&quot;Tuple&quot;))
+    return Tuple{deserialize.(args)...}
+end
+
+</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/waralex/DataFrameDBs.jl/blob/ec71bf8c83230601a2523e20765e660d54e98e64/src/columntypes/base.jl#L126-L161">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="DataFrameDBs.ColumnTypes.Ast" href="#DataFrameDBs.ColumnTypes.Ast"><code>DataFrameDBs.ColumnTypes.Ast</code></a> — <span class="docstring-category">Type</span></header><section><div><pre><code class="language-julia">Ast</code></pre><p>Struct that represent type of column</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/waralex/DataFrameDBs.jl/blob/ec71bf8c83230601a2523e20765e660d54e98e64/src/columntypes/base.jl#L1-L5">source</a></section></article><h2 id="Future-plans-1"><a class="docs-heading-anchor" href="#Future-plans-1">Future plans</a><a class="docs-heading-anchor-permalink" href="#Future-plans-1" title="Permalink"></a></h2><p>Julia is my hobby, so further development depends on my free time, and, more importantly, on the community’s interest in the package. If the DataFrameDBs is interesting, then the following features are possible</p><ul><li>Adding NamedTuples, Vectors, Nested Vectors (i.e. Vector{Vector{Vector}}), Vectors of Strings and Tuples of Strings to stored types</li><li>Adding CategorialArrays to stored types</li><li>Integration with OnlineStats and aggregation functional directly on DFView without materialization</li><li>Database infrastructure - i.e. several tables with possibility of joins, persistent join indexes and etc.</li><li>Bloom filters as secondary indexes</li><li>Integration with Tables.jl interfaces and DataFrames.jl interfaces</li><li>Bulk updates possibility</li><li>Primary key, aka stored sort order with possibility of resort stored data</li></ul></article></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Sunday 8 March 2020 11:53">Sunday 8 March 2020</span>. Using Julia version 1.3.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
