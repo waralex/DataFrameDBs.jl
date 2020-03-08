@@ -159,9 +159,9 @@ end
 
 ```
 """
-serialize(::Type{Date}) = Ast(Symbol(Date))
-serialize(::Type{DateTime}) = Ast(Symbol(DateTime))
-serialize(::Type{Time}) = Ast(Symbol(Time))
+serialize(::Type{Date}) = Ast(Symbol("Date"))
+serialize(::Type{DateTime}) = Ast(Symbol("DateTime"))
+serialize(::Type{Time}) = Ast(Symbol("Time"))
 deserialize(::Val{Symbol("Date")}) = Date
 deserialize(::Val{Symbol("DateTime")}) = DateTime
 deserialize(::Val{Symbol("Time")}) = Time
