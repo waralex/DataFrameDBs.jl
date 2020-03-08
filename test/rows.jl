@@ -5,7 +5,7 @@ using DataFrames
 using InteractiveUtils
 
 @testset "rows" begin
-    rm("test_data", force = true, recursive = true) 
+    #rm("test_data", force = true, recursive = true) 
     sz = 200
     df = DataFrame((
         a = collect(1:sz),        

@@ -4,7 +4,7 @@ DFView, proj_elem, required_columns, BlocksIterator, materialize, names, selproj
 using DataFrames
 using InteractiveUtils
 @testset "view" begin
-    rm("test_data", force = true, recursive = true) 
+    #rm("test_data", force = true, recursive = true) 
     sz = 1000
     df = DataFrame((
         a = collect(1:sz),        

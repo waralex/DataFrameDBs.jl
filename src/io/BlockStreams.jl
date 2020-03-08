@@ -36,7 +36,7 @@ end
 function commit_block_write!(s::BlockStream)
     size_to_compress = s.uncomp_buffer.size
     size_to_compress == 0 && return (0,0)
-    compressed_bound = Int64(CodecLz4.LZ4_compressBound(size_to_compress))    
+    compressed_bound = Int(CodecLz4.LZ4_compressBound(size_to_compress))    
     Base.ensureroom(s.comp_buffer, compressed_bound)
     
     compressed_size = Int64(CodecLz4.LZ4_compress_fast(
@@ -102,8 +102,8 @@ function read_block(f::Function, s::BlockStream)
     
     sizes = read_sizes(s)
     
-    Base.ensureroom(s.comp_buffer, sizes.compressed)
-    Base.ensureroom(s.uncomp_buffer, sizes.origin)
+    Base.ensureroom(s.comp_buffer, Int(sizes.compressed))
+    Base.ensureroom(s.uncomp_buffer, Int(sizes.origin))
     Base.unsafe_read(s.io, pointer(s.comp_buffer.data), sizes.compressed)
     size = CodecLz4.LZ4_decompress_safe(pointer(s.comp_buffer.data), pointer(s.uncomp_buffer.data),
     sizes.compressed, sizes.origin)

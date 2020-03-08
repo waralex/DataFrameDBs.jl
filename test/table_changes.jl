@@ -5,7 +5,7 @@ table_exists, drop_table!, truncate_table!, insert, rename_column!, open_table, 
 using DataFrames
 using InteractiveUtils
 @testset "drop truncate rename" begin
-    rm("test_data", force = true, recursive = true) 
+    #rm("test_data", force = true, recursive = true) 
     sz = 1000
     df = DataFrame((
         a = collect(1:sz),        
@@ -55,7 +55,7 @@ using InteractiveUtils
 end
 
 @testset "add_column" begin
-    rm("test_data", force = true, recursive = true) 
+    #rm("test_data", force = true, recursive = true) 
     sz = 1000
     df = DataFrame((
         a = collect(1:sz),        
