@@ -215,8 +215,9 @@ end
 Base.size(t::DFTable) = Base.size(DFView(t))
 Base.size(t::DFTable, dim::Number) = Base.size(DFView(t), dim)
 
-function Base.lastindex(v::DFTable, dim::Number)
+function Base.lastindex(v::DFView, dim::Number)
     !(dim in 1:2) && throw(ArgumentError("DFView have only 2 dimensions"))
     dim == 1 && return nrow(v)
     dim == 2 && return ncol(v)
 end
+Base.lastindex(v::DFTable, dim::Number) = Base.lastindex(v[:,:], dim)

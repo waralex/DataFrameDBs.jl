@@ -65,7 +65,7 @@ function write_progress_channel(cols, out::IO = stderr;spawn = true, update = 0.
                 printover_head(out)
                     print(out, "Time: ")
                     printstyled(out, durationstring(duration);bold = true)
-                    print(out, " writerd: ")
+                    print(out, " writed: ")
                     printstyled(out, pretty.rows;bold = true)
                     print(out, " (")
                     printstyled(out, prow_per_sec;bold = true)

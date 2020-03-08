@@ -131,7 +131,9 @@ Define rule of serialization  and desiralization of Julia type to column type st
 Define it to custom bits type for allowing to store this type in DFTable
 
 # Examples
-```Julia
+
+```julia
+
 ColumnTypes.serialize(::Type{Date}) = Ast(Symbol("Date"))
 ColumnTypes.deserialize(::Val{Symbol("Date")}) = Date
 
@@ -155,7 +157,7 @@ function ColumnTypes.deserialize(a::Val{Symbol("Tuple")}, args...)
 end
 
 
-````
+```
 """
 serialize(::Type{Date}) = Ast(Symbol(Date))
 serialize(::Type{DateTime}) = Ast(Symbol(DateTime))

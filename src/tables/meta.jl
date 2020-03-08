@@ -15,8 +15,7 @@ struct DFTableMeta
     block_size ::Int64
     format_version ::Int64  #for possible future changes of serialization format
     
-    DFTableMeta() = new(Vector{ColumnMeta}(undef, 0), 0, 0)
-    
+    DFTableMeta(block_size = DEFAULT_BLOCK_SIZE) = new(Vector{ColumnMeta}(undef, 0), block_size, 0)
     DFTableMeta(columns ::Vector{ColumnMeta},
       block_size = DEFAULT_BLOCK_SIZE, format_version = FORMAT_VERSION) = new(columns, block_size, format_version)    
 

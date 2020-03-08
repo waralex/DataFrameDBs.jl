@@ -1,0 +1,2 @@
+The DateFrameDBs is the persistent, space efficient columnar database, inspired by [DataFrames](https://github.com/JuliaData/DataFrames.jl) and columnar databases like [ClickHouse](https://github.com/ClickHouse/ClickHouse).
+See docs for more details

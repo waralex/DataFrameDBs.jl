@@ -43,6 +43,7 @@ function write_column(table::DFTable, name::Symbol, data::AbstractVector; close_
         !isnothing(progress) && put!(progress, [sz])
         
         offset += block_size
+        
     end
     if offset <= total_rows
         r = offset:total_rows

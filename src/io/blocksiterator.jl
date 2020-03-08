@@ -98,7 +98,7 @@ skip_cols(it::BlocksIterator, c::Tuple{})::SizeStats = SizeStats()
 function Base.iterate(it::BlocksIterator{DataReader}, state = nothing)
     while true
         
-        stop = !isempty(it.streams) && skipblocks(it)
+        stop = isempty(it.streams) || skipblocks(it)
         if stop            
             close.(values(it.streams))
             if !isnothing(it.progress)
@@ -123,7 +123,7 @@ end
 function Base.iterate(it::BlocksIterator{SizeReader}, state = nothing)
     while true
         
-        stop = !isempty(it.streams) && skipblocks(it)
+        stop = isempty(it.streams) || skipblocks(it)
         if stop            
             close.(values(it.streams))
             if !isnothing(it.progress)

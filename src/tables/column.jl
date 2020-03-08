@@ -91,7 +91,6 @@ function Base.copyto!(dest::AbstractVector, src::DFColumn)
 end
 
 function Base.getindex(c::DFColumn, i::Number)
-    println("aa ", i)
     tmp_view = selection(c.view, i)
     it = BlocksIterator(tmp_view)
     res = iterate(it)

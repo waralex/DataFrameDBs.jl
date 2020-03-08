@@ -6,3 +6,4 @@ deps/build.log
 .vscode
 Manifest.toml
 dev_files
+.DS_Store

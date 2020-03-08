@@ -44,6 +44,20 @@ function create_table(path::String,
 end
 
 """
+    create_table(path::String; from, column_names ::Union{AbstractVector{Symbol}, AbstractVector{String}}, types ::AbstractVector{<:Type}; block_size = DEFAULT_BLOCK_SIZE, show_progress = false)
+
+Create new empty table
+"""
+function empty_table(path::String; block_size = DEFAULT_BLOCK_SIZE)
+    
+    table = DFTable(path, DFTableMeta())
+    make_table_files(table)
+    table.is_opened = true
+
+    return table
+end
+
+"""
     create_table(path::String; from, block_size = DEFAULT_BLOCK_SIZE, show_progress = false)
 
 Create table from existing data 

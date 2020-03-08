@@ -51,7 +51,7 @@ columns_meta(t::DFTable) = t.meta.columns
 
 function getmeta(table::DFTable, name::Symbol)
     res = findfirst(x->x.name == name, table.meta.columns)
-    isnothing(res) && KeyError(name)
+    isnothing(res) && throw(KeyError(name))
     return columns_meta(table)[res]
 end
 
@@ -95,9 +95,9 @@ Add column to table `data` can be AbstractVector or Iteratable or DFColumn
 """
 function add_column!(t::DFTable, name::Symbol, data; before::Union{Symbol, Nothing} = nothing, show_progress = false)
     (name in names(t)) && throw(ArgumentError("Column :$name already exists"))
-    nrow(t) != length(data) && throw(ArgumentError("Column and table have different sizes"))
+    (nrow(t) != 0 && nrow(t) != length(data)) && throw(ArgumentError("Column and table have different sizes"))
     (!isnothing(before) && !(before in names(t))) && throw(KeyError(before))
-    
+    !isavailabletype(eltype(data)) && throw(ArgumentError("$(eltype(data)) is not available as stored column type"))
     new_id = isempty(t.meta.columns) ? 1 : maximum(m->m.id, t.meta.columns) + 1
     
     !isavailabletype(eltype(data)) && throw(ArgumentError("$(eltype(data)) is not available as column type"))
@@ -107,7 +107,7 @@ function add_column!(t::DFTable, name::Symbol, data; before::Union{Symbol, Nothi
     pos = isnothing(before) ?
             length(t.meta.columns) + 1 :
             findfirst(x->x.name == before, t.meta.columns) 
-    
+        
     insert!(t.meta.columns, pos, new_meta)
     
     write_table_meta(t)

@@ -4,8 +4,8 @@
 Show row count and table space
 """
 function table_stats(table::DFTable)
- meta = columns_meta(table)
-    isempty(table.meta.columns) && DataFrames.DataFrame
+    meta = columns_meta(table)
+    isempty(table.meta.columns) && return DataFrames.DataFrame()
     result = OrderedDict(Pair{Symbol, SizeStats}.(getproperty.(meta, :name), Ref(SizeStats())))
     
     ios = open_files(table, mode = :read)
