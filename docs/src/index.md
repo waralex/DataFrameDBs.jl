@@ -1,6 +1,9 @@
 # DataFrameDBs.jl
 
 The DateFrameDBs is the persistent, space efficient columnar database, inspired by [DataFrames](https://github.com/JuliaData/DataFrames.jl) and columnar databases like [ClickHouse](https://github.com/ClickHouse/ClickHouse). 
+
+The DateFrameDBs  allows you to work with a large amount of data that does not fit in memory
+
 It's experimental package, so, please report bugs by [opening an issue] (https://github.com/waralex/DataFrameDBs.jl/issues/new).
 
 

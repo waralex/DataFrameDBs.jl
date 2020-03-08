@@ -4,7 +4,7 @@ mutable struct ColumnMeta
     name ::Symbol
     type ::Type        
     ColumnMeta(name::Union{String, Symbol}, type::Type) = new(0, Symbol(name), ColumnTypes.checktype(type))    
-    ColumnMeta(id::Int64,name::Union{String, Symbol}, type::Type) = new(id, Symbol(name), ColumnTypes.checktype(type))
+    ColumnMeta(id::Int,name::Union{String, Symbol}, type::Type) = new(id, Symbol(name), ColumnTypes.checktype(type))
     
     
 end
