@@ -135,7 +135,9 @@ function _apply_to_block(range, t::Tuple{BroadcastExecutor, Vararg}, block::Name
     r = eval_on_range(block, t[1], index)
     
     if length(index) == length(range)
-        range.=r
+        @simd for i in 1:length(range)
+            @inbounds range[i] = r[i]
+        end            
     else
         i::Int = 1
         for k in index

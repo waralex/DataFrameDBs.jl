@@ -99,7 +99,9 @@ function _extract_for_eval!(dest::NamedTuple, data::NamedTuple, range, cols::Tup
         dt = data[cols[1]]
         
         if length(range) == length(dt)
-            dst.=dt            
+            @simd for i in 1:length(range)
+                @inbounds dst[i] = dt[i]
+            end     
         else            
             i = 1
             for k in range
