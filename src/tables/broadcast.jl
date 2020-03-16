@@ -68,7 +68,8 @@ function BroadcastExecutor(block_broad::BlockBroadcasting{RT, F, Args}) where {R
 end
 
 _coltype_buffer(::Type{T}) where {T} = Vector{T}(undef, 0)
-_coltype_buffer(::Type{Bool}) = BitVector(undef, 0)
+#_coltype_buffer(::Type{String}) = Vector{SubString}(undef, 0)
+#_coltype_buffer(::Type{Bool}) = BitVector(undef, 0)
 _column_buffer(el::ColRef{T}) where {T} = NamedTuple{(el.name,)}((_coltype_buffer(T),))
 _column_buffer(el::BlockBroadcasting) = _columns_buffers(el.args)
 _column_buffer(el::T) where {T} = NamedTuple{(), Tuple{}}(())
@@ -94,11 +95,22 @@ _boradcasted_args(buffers::NamedTuple, args::Tuple{}) = ()
 
 function _extract_for_eval!(dest::NamedTuple, data::NamedTuple, range, cols::Tuple)    
     
-    @inbounds begin
+    
+        
         resize!(dest[cols[1]], length(range))
-        dest[cols[1]] .= view(data[cols[1]], range)
-        _extract_for_eval!(dest, data, range, Base.tail(cols))    
-    end
+        dst = dest[cols[1]]
+        dt = data[cols[1]]
+        i = 1
+        
+        for k in range
+            @inbounds dst[i] = dt[k]
+            #println(i, " - ", k)
+            i += 1
+        end        
+        
+    
+    _extract_for_eval!(dest, data, range, Base.tail(cols))    
+    
 
 end
    
@@ -107,12 +119,14 @@ _extract_for_eval!(dest::NamedTuple, data::NamedTuple, range, cols::Tuple{}) = n
 
 
 function eval_on_range(all_columns::NamedTuple,
-    exec::BroadcastExecutor{BT, InBuff, OutBuff},
-    range::Union{<:AbstractVector{<:Integer}, <:Integer, AbstractRange{<:Integer}}) where {BT, InBuff, OutBuff}
     
+    exec::BroadcastExecutor{BT, InBuff, OutBuff},
+    range) where {BT, InBuff, OutBuff}
+    #ind = Base.LogicalIndex(range)
    _extract_for_eval!(exec.in_buffers, all_columns, range, keys(exec.in_buffers))
     
    resize!(exec.buffer, length(range))    
+    
    Base.Broadcast.materialize!(exec.buffer, exec.broadcasting)
     
    return exec.buffer

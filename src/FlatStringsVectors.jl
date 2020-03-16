@@ -116,7 +116,8 @@ Base.size(a::FlatStringsVector) = Base.size(a.offsets)
 Base.@propagate_inbounds function Base.getindex(a::FlatStringsVector, i::Integer)     
     offset = eloffset(a, i)
     size = elsize(a, i)
-    getstring(a, offset, size)
+    getstring(a, offset, size)    
+    #SubString(a.data, offset+1, offset+size)
 end
 
 _elsizes(::FlatStringsVector{String}, sizes::SzVector) = sum(sizes)

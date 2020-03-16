@@ -25,7 +25,7 @@ function show_humansize(io, size::Number)
         end 
         size /= 1024
     end
-    print(io, size, "TB")
+    print(io, round(size, digits = 2), " TB")
 end
 
 function show_humanrows(io, rows::Number)
@@ -36,7 +36,7 @@ function show_humanrows(io, rows::Number)
         end 
         rows /= 1000
     end
-    print(io, rows, "BRows")
+    print(io, round(rows, digits = 2), " BRows")
 end
 
 function humansize(size::Number) 

@@ -86,56 +86,78 @@ _sel_convert_to_exe(t::Tuple{}) = ()
 
 struct SelectionExecutor{Args}
     queue ::Args
-    range_buffer ::Vector{Int64}
+    range_buffer ::Vector{Bool}#::Vector{Int64}
     SelectionExecutor(args::Args) where {Args} = new{Args}(args, Int64[])
 end
 SelectionExecutor(s::SelectionQueue{T}) where {T} = SelectionExecutor(_sel_convert_to_exe(s.queue))
 
-function _apply_to_block(range, t::Tuple{SelectionExRangeType, Vararg}, block::Union{NamedTuple, Nothing})::Vector{Int64}
-    inblock_part = intersect((1:length(range)) .+ t[1].offset, t[1].range) .- t[1].offset
+function _apply_to_block(range, t::Tuple{SelectionExRangeType, Vararg}, block::Union{NamedTuple, Nothing})
+    index = Base.LogicalIndex(range)
+    inblock_part = intersect((1:length(index)) .+ t[1].offset, t[1].range) .- t[1].offset
+    if inblock_part != 1:length(index)        
+        @inbounds for (i, k) in enumerate(index)
+            range[k] = i in inblock_part
+        end
+    end
+    
+
     #new_range = Base.reindex((range,), (inblock_part,))[1]    
-    new_range = view(range, inblock_part)
+    #new_range = view(range, inblock_part)
     #t[1].range = t[1].range .- length(range)    
-    t[1].offset += length(range)
-    return isempty(new_range) ? 
-            Int64[] :
-            _apply_to_block(new_range, Base.tail(t), block)
+    t[1].offset += length(index)
+    return isempty(range) ? 
+            view(range, 1:0) :
+            _apply_to_block(range, Base.tail(t), block)
 end
 
-function _apply_to_block(range, t::Tuple{RangeToProcess{<:BitArray}, Vararg}, block::Union{NamedTuple, Nothing})::Vector{Int64}
+#=function _apply_to_block(range, t::Tuple{RangeToProcess{<:BitArray}, Vararg}, block::Union{NamedTuple, Nothing})
     r = (1:length(range)) .+ t[1].offset
     new_range = view(range, view(t[1].range, r))
     
     t[1].offset += length(range)
     return isempty(new_range) ? 
-            Int64[] :
+            view(range, 1:0) :
             _apply_to_block(new_range, Base.tail(t), block)
-end
+end=#
 
-function _apply_to_block(range, t::Tuple{RangeToProcess{<:AbstractArray{Bool}}, Vararg}, block::Union{NamedTuple, Nothing})::Vector{Int64}
+#=function _apply_to_block(range, t::Tuple{RangeToProcess{<:AbstractArray{Bool}}, Vararg}, block::Union{NamedTuple, Nothing})
     r = (1:length(range)) .+ t[1].offset
     new_range = view(range, view(t[1].range, r))
     
     t[1].offset += length(range)
     return isempty(new_range) ? 
-            Int64[] :
+            view(range, 1:0) :
             _apply_to_block(new_range, Base.tail(t), block)
-end
+end=#
 
-function _apply_to_block(range, t::Tuple{BroadcastExecutor, Vararg}, block::NamedTuple)::Vector{Int64}
+function _apply_to_block(range, t::Tuple{BroadcastExecutor, Vararg}, block::NamedTuple)
+    index = Base.LogicalIndex(range)
+    r = eval_on_range(block, t[1], index)
     
-    new_range = view(range, eval_on_range(block, t[1], range))
-    return isempty(new_range) ? 
-            Int64[] :
-            _apply_to_block(new_range, Base.tail(t), block)
+    i::Int = 1
+    for k in index
+        @inbounds range[k] = r[i]
+        i+=1
+    
+    end
+    
+    
+    
+    
+    #new_range = view(range, r)
+    return isempty(range) ? 
+            view(range, 1:0) :
+            _apply_to_block(range, Base.tail(t), block)
 end
 
-_apply_to_block(range, ::Tuple{}, ::Union{NamedTuple, Nothing})::Vector{Int64} = collect(range)
+_apply_to_block(range, ::Tuple{}, ::Union{NamedTuple, Nothing}) = range
 
 function apply(s::SelectionExecutor, rows::Integer, block::Union{NamedTuple, Nothing})
     resize!(s.range_buffer, rows)
-    s.range_buffer .= (1:rows)
-    _apply_to_block(view(s.range_buffer, 1:rows), s.queue, block)
+    fill!(s.range_buffer, 1)
+    #s.range_buffer .= (1:rows)
+    _apply_to_block(s.range_buffer, s.queue, block)
+    return Base.LogicalIndex(s.range_buffer)
 end
 
 _isonly_range(t::Tuple{BroadcastExecutor, Vararg}) = false

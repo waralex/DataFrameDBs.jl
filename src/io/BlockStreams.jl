@@ -104,7 +104,9 @@ function read_block(f::Function, s::BlockStream)
     
     Base.ensureroom(s.comp_buffer, Int(sizes.compressed))
     Base.ensureroom(s.uncomp_buffer, Int(sizes.origin))
-    Base.unsafe_read(s.io, pointer(s.comp_buffer.data), sizes.compressed)
+    
+    Base.unsafe_read(s.io, pointer(s.comp_buffer.data), sizes.compressed)    
+    
     size = CodecLz4.LZ4_decompress_safe(pointer(s.comp_buffer.data), pointer(s.uncomp_buffer.data),
     sizes.compressed, sizes.origin)
     @assert size == sizes.origin "decompression error"

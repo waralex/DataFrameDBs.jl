@@ -5,18 +5,18 @@ function read_progress_channel(out::IO = stderr;spawn = true, update = 0.1)
     return Channel(spawn = spawn) do ch
         progress = ProgressMeter.ProgressUnknown("Processing data rows")
         total_rows = 0
-        start = time()
+        start = time_ns()
         last_show = time()
         while (rows = take!(ch)) !== nothing                        
             total_rows += rows            
             if time() - last_show > update
-                duration = time() - start
-                row_per_sec = total_rows / duration
+                duration = time_ns() - start
+                row_per_sec = total_rows * 1e9 / duration
                 prow_per_sec = humanrows(row_per_sec) * "/sec"
 
                 printover_head(out)
                     print(out, "Time: ")
-                    printstyled(out, durationstring(duration);bold = true)
+                    printstyled(out, durationstring(duration / 1e9);bold = true)
                     print(out, " readed: ")
                     printstyled(out, humanrows(total_rows);bold = true)
                     print(out, " (")
@@ -27,12 +27,12 @@ function read_progress_channel(out::IO = stderr;spawn = true, update = 0.1)
             end
         end
 
-        duration = time() - start
-        row_per_sec = total_rows / duration
+        duration = time_ns() - start
+        row_per_sec = total_rows * 1e9 / duration
         prow_per_sec = humanrows(row_per_sec) * "/sec"
         printover_head(out)
             print(out, "Time: ")
-            printstyled(out, durationstring(duration);bold = true)
+            printstyled(out, durationstring(duration / 1e9);bold = true)
             print(out, " readed: ")
             printstyled(out, humanrows(total_rows);bold = true)
             print(out, " (")
@@ -109,14 +109,16 @@ function write_progress_channel(cols, out::IO = stderr;spawn = true, update = 0.
 end
 
 function durationstring(nsec)
+    
     days = div(nsec, 60*60*24)
     r = nsec - 60*60*24*days
     hours = div(r,60*60)
     r = r - 60*60*hours
     minutes = div(r, 60)
-    seconds = floor(r - 60*minutes)
+    seconds = r - 60*minutes
+    
 
-    return @sprintf "%u:%02u:%02u" hours minutes seconds
+    return @sprintf "%u:%02u:%02.4f" hours minutes seconds
 end
 
 function move_cursor_up_while_clearing_lines(io, numlinesup)

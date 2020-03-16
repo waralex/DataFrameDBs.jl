@@ -44,7 +44,10 @@ using InteractiveUtils
     
     
     exec = BroadcastExecutor(test_c)
-    res = eval_on_range(data, exec, 1:10:100)
+    range = BitVector(undef, 100)
+    fill!(range, 0)
+    range[1:10:100] .= 1
+    res = eval_on_range(data, exec, Base.LogicalIndex(range))
     test_res = data.a[1:10:100] .*2 .+ data.c[1:10:100]
     @test res == test_res
 

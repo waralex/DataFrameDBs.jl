@@ -26,6 +26,10 @@ Materialize DFView or DFTable as DataFrame
 """
 function materialize(v::DFView)
     result = make_materialization(v)
+    rows = nrow(v)
+    for r in result
+        sizehint!(r, rows)
+    end
     for block in BlocksIterator(v)
         for (res, bl) in zip(result, block)
             append!(res, bl)

@@ -190,9 +190,16 @@ end
 
 function nrow(v::DFView)
     res = 0
-    for rows in BlockRowsIterator(v)
-        res += rows
+    iter = BlockRowsIterator(v)
+    r = iterate(iter)
+    while true        
+        isnothing(r) && break        
+        res += r[1]
+        r = iterate(iter, r[2])
     end
+    #for rows in BlockRowsIterator(v)
+    #    res += rows
+    #end
     return res
 end
 function ncol(v::DFView)
