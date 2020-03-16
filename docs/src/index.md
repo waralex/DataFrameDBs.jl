@@ -276,7 +276,7 @@ I use the CSV.Rows as csv parser because it don't load entire csv to memory. The
 Let's append second file of the dataset to the table:
 ```julia
 julia> insert(t, CSV.Rows("ecommerce-behavior-data-from-multi-category-store/2019-Nov.csv", reuse_row=true), show_progress=true)
-Time: 0:05:35 writerd: 67.55 MRows (201.38 KRows/sec), uncompressed size: 10.09 GB, compressed size: 3.77 GB, compression ratio: 2.68
+Time: 0:05:35 writed: 67.55 MRows (201.38 KRows/sec), uncompressed size: 10.09 GB, compressed size: 3.77 GB, compression ratio: 2.68
 DFTable path: ecommerce
 10×6 DataFrames.DataFrame
 │ Row │ column        │ type                   │ rows         │ uncompressed size │ compressed size │ compression ratio │
@@ -324,12 +324,10 @@ You can turn off it later with `turnoff_progress!(t)`
 Let's convert numeric columns to a numeric type using the category_id column example. First check is where missings in category_id
 ```julia
 julia> sum(ismissing.(t.category_id))
-Time: 0:00:00 readed: 109.95 MRows (128.57 MRows/sec)
 Time: 0:00:07 readed: 109.95 MRows (14.4 MRows/sec)
 0
 ```
 There are 0 missings in column. 
-In this example we see progress info lines - first line show progress of reading block sizes in `length` call for column in internals of broadcast. Second show progress of reading data to ismissing check. As you can see sizes reads with speed of 128 Million rows per second, checks for missings perfoms with speed of 14 Million rows per second. Entire column don't materialized. It allocate only one block(65536 rows) at a time to perfom check.
 
 Let's convert category_id to Int64 column.
 
@@ -357,9 +355,6 @@ materialize(c_id[1:10])
 Add new column before :category_column :
 ```julia
 julia> add_column!(t, :category_id, c_id, before=:category_code)
-Time: 0:00:00 readed: 109.95 MRows (168.99 MRows/sec)
-Time: 0:00:00 readed: 109.95 MRows (241.71 MRows/sec)
-Time: 0:00:00 readed: 109.95 MRows (216.34 MRows/sec)
 Time: 0:00:14 readed: 109.95 MRows (7.81 MRows/sec)
 
 julia> head(t)
@@ -422,7 +417,6 @@ You can convert product_id, user_id and price in similar way.
 Converting event_time is a bit more complicated:
 ```julia
 julia> sum(ismissing.(t.event_time)) #check missings
-Time: 0:00:00 readed: 109.95 MRows (232.95 MRows/sec)
 Time: 0:00:06 readed: 109.95 MRows (17.64 MRows/sec)
 0
 julia> rename_column!(t, :event_time, :event_time_raw)
@@ -436,9 +430,6 @@ Time: 0:00:00 readed: 109.95 MRows (237.47 MRows/sec)
 DataFrameDBs.DFColumn{DateTime}
 
 julia> add_column!(t, :event_time, result_col, before = :event_type)
-Time: 0:00:00 readed: 109.95 MRows (177.3 MRows/sec)
-Time: 0:00:00 readed: 109.95 MRows (229.81 MRows/sec)
-Time: 0:00:00 readed: 109.95 MRows (244.99 MRows/sec)
 Time: 0:00:43 readed: 109.95 MRows (2.54 MRows/sec)
 
 julia> drop_column!(t, :event_time_raw)
@@ -455,10 +446,6 @@ Time: 0:00:00 readed: 109.95 MRows (174.5 MRows/sec)
 DataFrameDBs.DFColumn{String}
 
 julia> add_column!(t, :event_type, string_convert.(t.event_type_raw), before = :product_id)
-Time: 0:00:00 readed: 109.95 MRows (240.52 MRows/sec)
-Time: 0:00:00 readed: 109.95 MRows (173.21 MRows/sec)
-Time: 0:00:00 readed: 109.95 MRows (229.99 MRows/sec)
-Time: 0:00:00 readed: 109.95 MRows (230.37 MRows/sec)
 Time: 0:00:06 readed: 109.95 MRows (17.9 MRows/sec)
 
 julia> drop_column!(t, :event_type_raw)
@@ -497,7 +484,6 @@ Time: 0:00:09 readed: 109.95 MRows (11.14 MRows/sec)
  "cart"
 
 julia> unique(t.brand[t.brand .!= ""])
-Time: 0:00:00 readed: 109.95 MRows (193.31 MRows/sec)
 Time: 0:00:14 readed: 109.95 MRows (7.54 MRows/sec)
 4303-element Array{Any,1}:
  "shiseido"
@@ -515,12 +501,10 @@ Mean price of huawai and apple
 ```julia
 julia> using Statistics
 julia> mean(t.price[t.brand.=="huawei"])
-Time: 0:00:00 readed: 109.95 MRows (190.21 MRows/sec)
 Time: 0:00:04 readed: 109.95 MRows (22.55 MRows/sec)
 264.23702928355846
 
 julia> mean(t.price[t.brand.=="apple"])
-Time: 0:00:00 readed: 109.95 MRows (192.56 MRows/sec)
 Time: 0:00:05 readed: 109.95 MRows (18.97 MRows/sec)
 828.5794773596991
 ```
@@ -529,9 +513,6 @@ Materialize all rows, where price is more then 2000, event_type is "purchase" an
 
 ```julia
 julia> t[(t.price.>2000).&(t.event_type.=="purchase").&(t.brand.=="samsung"), :] |> materialize
-Time: 0:00:00 readed: 109.95 MRows (185.04 MRows/sec)
-Time: 0:00:00 readed: 109.95 MRows (221.92 MRows/sec)
-Time: 0:00:00 readed: 109.95 MRows (187.44 MRows/sec)
 Time: 0:00:11 readed: 109.95 MRows (9.83 MRows/sec)
 217×9 DataFrames.DataFrame
 │ Row │ event_time          │ event_type │ product_id │ category_id         │ category_code          │ brand   │ price   │ user_id   │ user_session                         │
@@ -580,9 +561,6 @@ Calculate sum of prices for rows, matching condition above:
 julia> using Statistics
 
 julia> mean(v[(v.price.>2000).&(v.event_type.=="purchase").&(v.brand.=="samsung"), :price])
-Time: 0:00:00 readed: 109.95 MRows (475.72 MRows/sec)
-Time: 0:00:00 readed: 109.95 MRows (428.33 MRows/sec)
-Time: 0:00:00 readed: 109.95 MRows (553.17 MRows/sec)
 Time: 0:00:02 readed: 109.95 MRows (51.44 MRows/sec)
 2546.1417391304344
 ```

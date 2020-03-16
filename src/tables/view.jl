@@ -189,6 +189,7 @@ function required_columns(v::DFView)
 end
 
 function nrow(v::DFView)
+    #error("check")
     res = 0
     iter = BlockRowsIterator(v)
     r = iterate(iter)

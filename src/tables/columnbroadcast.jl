@@ -41,7 +41,10 @@ _bc_convert_arg(arg::DFColumn) = arg.view.projection.cols[1]
 
 _bc_convert_arg(arg) = arg    
 
+Base.Broadcast.instantiate(bc::Base.Broadcast.Broadcasted{DFColumnStyle}) = bc
+
 function Base.copy(bc::Base.Broadcast.Broadcasted{DFColumnStyle})
+    
     table_selection = nothing
     for arg in bc.args
         table_selection = _check_same_selection(arg, table_selection)
