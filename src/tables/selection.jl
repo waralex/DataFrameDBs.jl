@@ -134,12 +134,16 @@ function _apply_to_block(range, t::Tuple{BroadcastExecutor, Vararg}, block::Name
     index = Base.LogicalIndex(range)
     r = eval_on_range(block, t[1], index)
     
-    i::Int = 1
-    for k in index
-        @inbounds range[k] = r[i]
-        i+=1
-    
+    if length(index) == length(range)
+        range.=r
+    else
+        i::Int = 1
+        for k in index
+            @inbounds range[k] = r[i]
+            i+=1        
+        end
     end
+    
     
     
     

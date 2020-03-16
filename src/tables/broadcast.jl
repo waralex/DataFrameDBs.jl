@@ -93,25 +93,23 @@ _boradcasted_args(buffers::NamedTuple, args::Tuple) = (
                 )
 _boradcasted_args(buffers::NamedTuple, args::Tuple{}) = ()
 
-function _extract_for_eval!(dest::NamedTuple, data::NamedTuple, range, cols::Tuple)    
-    
-    
-        
+function _extract_for_eval!(dest::NamedTuple, data::NamedTuple, range, cols::Tuple)            
         resize!(dest[cols[1]], length(range))
         dst = dest[cols[1]]
         dt = data[cols[1]]
-        i = 1
         
-        for k in range
-            @inbounds dst[i] = dt[k]
-            #println(i, " - ", k)
-            i += 1
-        end        
+        if length(range) == length(dt)
+            dst.=dt            
+        else            
+            i = 1
+            for k in range
+                @inbounds dst[i] = dt[k]                
+                i += 1
+            end        
+        end
         
-    
+        
     _extract_for_eval!(dest, data, range, Base.tail(cols))    
-    
-
 end
    
 
