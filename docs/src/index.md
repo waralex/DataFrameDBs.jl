@@ -10,7 +10,7 @@ It's experimental package, so, please report bugs by [opening an issue] (https:/
 
 ## Installation
 
-Julia 1.3 required
+Julia >=1.2 required
 
 The DataFrameDBs is not yet part of Julia package system, you can install it directly from github:
 ```julia

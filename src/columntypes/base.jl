@@ -41,10 +41,11 @@ Base.show(io::IO, a::Ast) = print(io, human_typestring(a))
 function parse_typestring(s::AbstractString)
     s = strip(s)
     (isempty(s)||s[1]=='(') && error("typename parse error in $S")
-    brace_pos = findfirst('(', s)
+    brace_pos = findfirst("(", s)
     if isnothing(brace_pos)
         return Ast(Symbol(s))
     end
+    brace_pos = brace_pos[1]
     s[end] != ')' && error("typename parse error in $s")
     ast = Ast(Symbol(s[1:brace_pos-1]))
     inner = SubString(s, brace_pos + 1, length(s) - 1)

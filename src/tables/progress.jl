@@ -2,7 +2,8 @@ using Printf: @sprintf
 
 
 function read_progress_channel(out::IO = stderr;spawn = true, update = 0.1)  
-    return Channel(spawn = spawn) do ch
+  
+    function progress_func(ch)
         progress = ProgressMeter.ProgressUnknown("Processing data rows")
         total_rows = 0
         start = time_ns()
@@ -42,6 +43,18 @@ function read_progress_channel(out::IO = stderr;spawn = true, update = 0.1)
         print(out, "\n")
         put!(ch, 0)
     end
+
+
+    chnl = Channel{Any}(0)
+    task = Task(() -> progress_func(chnl))
+    task.sticky = !spawn
+    bind(chnl, task)
+    if spawn
+        schedule(task) # start it on (potentially) another thread
+    else
+        yield(task) # immediately start it, yielding the current thread
+    end    
+    return chnl
 end
 
 function write_progress_channel(cols, out::IO = stderr;spawn = true, update = 0.05)  
