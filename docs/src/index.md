@@ -50,7 +50,7 @@ Lets add some columns to our table:
 ```julia
 julia> size = 3000000
 julia> add_column!(t, :id, 1:size, show_progress = true)
-Time: 0:00:00 writed: 3.0 MRows (16.27 MRows/sec), uncompressed size: 22.89 MB, compressed size: 11.45 MB, compression ratio: 2.0
+Time: 0:00:00 written: 3.0 MRows (16.27 MRows/sec), uncompressed size: 22.89 MB, compressed size: 11.45 MB, compression ratio: 2.0
 
 julia> add_column!(t, :code, rand(1:1000, size), show_progress = true)
 Time: 0:00:00 writerd: 3.0 MRows (49.7 MRows/sec), uncompressed size: 22.89 MB, compressed size: 8.97 MB, compression ratio: 2.55
@@ -276,7 +276,7 @@ I use the CSV.Rows as csv parser because it don't load entire csv to memory. The
 Let's append second file of the dataset to the table:
 ```julia
 julia> insert(t, CSV.Rows("ecommerce-behavior-data-from-multi-category-store/2019-Nov.csv", reuse_row=true), show_progress=true)
-Time: 0:05:35 writed: 67.55 MRows (201.38 KRows/sec), uncompressed size: 10.09 GB, compressed size: 3.77 GB, compression ratio: 2.68
+Time: 0:05:35 written: 67.55 MRows (201.38 KRows/sec), uncompressed size: 10.09 GB, compressed size: 3.77 GB, compression ratio: 2.68
 DFTable path: ecommerce
 10×6 DataFrames.DataFrame
 │ Row │ column        │ type                   │ rows         │ uncompressed size │ compressed size │ compression ratio │
@@ -324,7 +324,7 @@ You can turn off it later with `turnoff_progress!(t)`
 Let's convert numeric columns to a numeric type using the category_id column example. First check is where missings in category_id
 ```julia
 julia> sum(ismissing.(t.category_id))
-Time: 0:00:07 readed: 109.95 MRows (14.4 MRows/sec)
+Time: 0:00:07 read: 109.95 MRows (14.4 MRows/sec)
 0
 ```
 There are 0 missings in column. 
@@ -355,10 +355,10 @@ materialize(c_id[1:10])
 Add new column before :category_column :
 ```julia
 julia> add_column!(t, :category_id, c_id, before=:category_code)
-Time: 0:00:14 readed: 109.95 MRows (7.81 MRows/sec)
+Time: 0:00:14 read: 109.95 MRows (7.81 MRows/sec)
 
 julia> head(t)
-Time: 0:00:00 readed: 65.54 KRows (260.05 MRows/sec)
+Time: 0:00:00 read: 65.54 KRows (260.05 MRows/sec)
 10×10 DataFrames.DataFrame
 │ Row │ event_time              │ event_type │ product_id │ category_id_raw     │ category_id         │ category_code                       │ brand    │ price   │ user_id   │ user_session                         │
 │     │ Union{Missing, String}  │ String⍰    │ String⍰    │ String⍰             │ Int64               │ Union{Missing, String}              │ String⍰  │ String⍰ │ String⍰   │ Union{Missing, String}               │
@@ -396,7 +396,7 @@ DFTable path: ecommerce
 │ 10  │ Table total   │                        │ 109.95 MRows │ 14.9 GB           │ 5.8 GB          │ 2.57              │
 
 julia> head(t)
-Time: 0:00:00 readed: 65.54 KRows (2.25 MRows/sec)
+Time: 0:00:00 read: 65.54 KRows (2.25 MRows/sec)
 10×9 DataFrames.DataFrame
 │ Row │ event_time              │ event_type │ product_id │ category_id         │ category_code                       │ brand    │ price   │ user_id   │ user_session                         │
 │     │ Union{Missing, String}  │ String⍰    │ String⍰    │ Int64               │ Union{Missing, String}              │ String⍰  │ String⍰ │ String⍰   │ Union{Missing, String}               │
@@ -417,7 +417,7 @@ You can convert product_id, user_id and price in similar way.
 Converting event_time is a bit more complicated:
 ```julia
 julia> sum(ismissing.(t.event_time)) #check missings
-Time: 0:00:06 readed: 109.95 MRows (17.64 MRows/sec)
+Time: 0:00:06 read: 109.95 MRows (17.64 MRows/sec)
 0
 julia> rename_column!(t, :event_time, :event_time_raw)
 
@@ -426,11 +426,11 @@ julia> string_col = string.(t.event_time_raw) #get DFColumn{String} from DFColum
 julia> date_convert(s)::DateTime = DateTime(parse.(Int64, SubString.(string.(s), (1:4, 6:7, 9:10, 12:13, 15:16, 18:19)))...) #Conversion function
 
 julia> result_col = date_convert.(string_col)
-Time: 0:00:00 readed: 109.95 MRows (237.47 MRows/sec)
+Time: 0:00:00 read: 109.95 MRows (237.47 MRows/sec)
 DataFrameDBs.DFColumn{DateTime}
 
 julia> add_column!(t, :event_time, result_col, before = :event_type)
-Time: 0:00:43 readed: 109.95 MRows (2.54 MRows/sec)
+Time: 0:00:43 read: 109.95 MRows (2.54 MRows/sec)
 
 julia> drop_column!(t, :event_time_raw)
 ```
@@ -442,11 +442,11 @@ julia> string_convert(x) = ismissing(x) ? "" : String(x)
 string_convert (generic function with 1 method)
 
 julia> string_convert.(t.event_type_raw)
-Time: 0:00:00 readed: 109.95 MRows (174.5 MRows/sec)
+Time: 0:00:00 read: 109.95 MRows (174.5 MRows/sec)
 DataFrameDBs.DFColumn{String}
 
 julia> add_column!(t, :event_type, string_convert.(t.event_type_raw), before = :product_id)
-Time: 0:00:06 readed: 109.95 MRows (17.9 MRows/sec)
+Time: 0:00:06 read: 109.95 MRows (17.9 MRows/sec)
 
 julia> drop_column!(t, :event_type_raw)
 ```
@@ -477,14 +477,14 @@ It's typed and takes up more than two times less disk space than csv
 Get unique event_type and brands:
 ```julia
 julia> unique(t.event_type)
-Time: 0:00:09 readed: 109.95 MRows (11.14 MRows/sec)
+Time: 0:00:09 read: 109.95 MRows (11.14 MRows/sec)
 3-element Array{Any,1}:
  "view"
  "purchase"
  "cart"
 
 julia> unique(t.brand[t.brand .!= ""])
-Time: 0:00:14 readed: 109.95 MRows (7.54 MRows/sec)
+Time: 0:00:14 read: 109.95 MRows (7.54 MRows/sec)
 4303-element Array{Any,1}:
  "shiseido"
  "aqua"
@@ -501,11 +501,11 @@ Mean price of huawai and apple
 ```julia
 julia> using Statistics
 julia> mean(t.price[t.brand.=="huawei"])
-Time: 0:00:04 readed: 109.95 MRows (22.55 MRows/sec)
+Time: 0:00:04 read: 109.95 MRows (22.55 MRows/sec)
 264.23702928355846
 
 julia> mean(t.price[t.brand.=="apple"])
-Time: 0:00:05 readed: 109.95 MRows (18.97 MRows/sec)
+Time: 0:00:05 read: 109.95 MRows (18.97 MRows/sec)
 828.5794773596991
 ```
 
@@ -513,7 +513,7 @@ Materialize all rows, where price is more then 2000, event_type is "purchase" an
 
 ```julia
 julia> t[(t.price.>2000).&(t.event_type.=="purchase").&(t.brand.=="samsung"), :] |> materialize
-Time: 0:00:11 readed: 109.95 MRows (9.83 MRows/sec)
+Time: 0:00:11 read: 109.95 MRows (9.83 MRows/sec)
 217×9 DataFrames.DataFrame
 │ Row │ event_time          │ event_type │ product_id │ category_id         │ category_code          │ brand   │ price   │ user_id   │ user_session                         │
 │     │ DateTime            │ String     │ Int64      │ Int64               │ String                 │ String  │ Float64 │ Int64     │ String                               │
@@ -531,16 +531,13 @@ Time: 0:00:11 readed: 109.95 MRows (9.83 MRows/sec)
 Check above condition only on each 10th row of the table:
 ```julia
 v = t[1:10:end, :]
-Time: 0:00:00 readed: 109.95 MRows (221.21 MRows/sec)
+Time: 0:00:00 read: 109.95 MRows (221.21 MRows/sec)
 View of table ecommerce
 Projection: event_time=>col(event_time)::Dates.DateTime; event_type=>col(event_type)::String; product_id=>col(product_id)::Int64; category_id=>col(category_id)::Int64; category_code=>col(category_code)::String; brand=>col(brand)::String; price=>col(price)::Float64; user_id=>col(user_id)::Int64; user_session=>col(user_session)::String
 Selection: 1:10:109950741
 
 julia> v[(v.price.>2000).&(v.event_type.=="purchase").&(v.brand.=="samsung"), :] |> materialize
-Time: 0:00:00 readed: 109.95 MRows (538.88 MRows/sec)
-Time: 0:00:00 readed: 109.95 MRows (597.39 MRows/sec)
-Time: 0:00:00 readed: 109.95 MRows (491.73 MRows/sec)
-Time: 0:00:02 readed: 109.95 MRows (40.87 MRows/sec)
+Time: 0:00:02 read: 109.95 MRows (40.87 MRows/sec)
 23×9 DataFrames.DataFrame
 │ Row │ event_time          │ event_type │ product_id │ category_id         │ category_code          │ brand   │ price   │ user_id   │ user_session                         │
 │     │ Dates.DateTime      │ String     │ Int64      │ Int64               │ String                 │ String  │ Float64 │ Int64     │ String                               │
@@ -561,7 +558,7 @@ Calculate sum of prices for rows, matching condition above:
 julia> using Statistics
 
 julia> mean(v[(v.price.>2000).&(v.event_type.=="purchase").&(v.brand.=="samsung"), :price])
-Time: 0:00:02 readed: 109.95 MRows (51.44 MRows/sec)
+Time: 0:00:02 read: 109.95 MRows (51.44 MRows/sec)
 2546.1417391304344
 ```
 
