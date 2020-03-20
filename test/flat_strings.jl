@@ -2,6 +2,7 @@ using DataFrameDBs.FlatStringsVectors
 Base.show(io, a::T) where {T<:Unsigned} = print(io, a) 
 @testset "base" begin
     
+    # Comparison Feature
     test = ["sfsdf", "ggggg", "ll", "", "kk"]
     a = FlatStringsVector{String}(test)
     b = FlatStringsVector{String}(test)
@@ -10,6 +11,7 @@ Base.show(io, a::T) where {T<:Unsigned} = print(io, a)
     @test reinterpret(Int32,a.offsets) == reinterpret(Int32, b.offsets)
     @test a == b
     
+    # Get Feature 
     @test typeof(a[1]) <: AbstractString
     @test length(a) == length(test)
     @test a[1] == test[1]
@@ -17,11 +19,12 @@ Base.show(io, a::T) where {T<:Unsigned} = print(io, a)
     @test a[end - 1] == test[end - 1]
     @test a[end] == test[end]
     
+    # Iterable feature
     for (i, s) in enumerate(a)
         @test s == test[i]
     end
-    
-    
+
+    # Push Feature
     push!(a, "tyuu")
     @test a != b
     @test a[end] == "tyuu"
@@ -34,9 +37,7 @@ Base.show(io, a::T) where {T<:Unsigned} = print(io, a)
     push!(a, SubString(s, 3:5))
     @test a[end] == "345"
     
-    
-    
-
+    # Append Feature
     test_2 = ["1", "2", "", "fff"]
     a = FlatStringsVector{String}(test)
     b = FlatStringsVector{String}(test_2)
@@ -48,6 +49,13 @@ Base.show(io, a::T) where {T<:Unsigned} = print(io, a)
         (i > length(test)) && @test s == test_2[i - length(test)]
     end
     
+    # Filter feature
+    test_filter = ["1", "2", "3", "4"]
+    a = FlatStringsVector{String}(test_filter)
+    filter!(e->e!="1", a)
+    @test length(a)==length(test_filter)-1
+    @test a[0]=="2"
+    @test !("1" in a)
 end
 
 @testset "missing" begin
