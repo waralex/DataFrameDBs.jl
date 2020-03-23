@@ -137,6 +137,8 @@ end
 
 Base.getindex(v::DFTable, select::Any, project::Any) = Base.getindex(DFView(v), select, project)
 
+
+
 """
     map_to_column(f::Function, v::DFView)
     map_to_column(f::Function, v::DFView)
@@ -173,7 +175,6 @@ function Base.getproperty(v::DFTable, name::Symbol)
     (name in fieldnames(typeof(v))) && return getfield(v, name)
     return v[:, name]
 end
-
 
 
 issametable(a::DFView, b::DFView) = a.table == b.table

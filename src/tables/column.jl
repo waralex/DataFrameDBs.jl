@@ -162,3 +162,13 @@ function DFView(cols::NamedTuple{Cols, <:Tuple{Vararg{<:DFColumn}}}) where {Cols
 end
 
 DFView(;kwargs...) = DFView((;kwargs...,))
+"""
+    add_column(v::DFView, name::Symbol, column::DFColum)
+
+Add column to view. Column must have same selection as view
+"""
+function add_column!(v::DFView, name::Symbol, column::DFColumn)
+    !issameselection(v, column.view) && throw(ArgumentError("col must have same selection as view"))    
+    v.projection = add(v.projection, NamedTuple{(name,)}((column.view.projection.cols[1],)))
+    return v
+end

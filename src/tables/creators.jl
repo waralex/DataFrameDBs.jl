@@ -78,7 +78,7 @@ df = DataFrame((a=collect(1:100), b=collect(1:100)))
 create_table("table_from_df", from = df, show_progress = true)
 ```
 """
-function create_table(path::String; from, block_size = DEFAULT_BLOCK_SIZE, show_progress = false)
+function create_table(path::String; from, block_size = DEFAULT_BLOCK_SIZE, show_progress = true)
     schema = Tables.schema(from)
     isnothing(schema) && ArgumentError("Tables.schema undefinded for $(from)")    
     names = collect(schema.names)
