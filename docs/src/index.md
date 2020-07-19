@@ -32,7 +32,7 @@ You can also store any custom `isbitstype` type with little efforts
 
 In the future, I plan to get support of arrays, nested arrays and categorial arrays
  
-If you want data only from the specific columns with some condition mathcing, when only that data will be allocated, not entire table. For example if you want see the product name and price for sales in a particular category, then only that data will be materialized. 
+If you want data only from the specific columns with some condition matching, when only that data will be allocated, not entire table. For example if you want see the product name and price for sales in a particular category, then only that data will be materialized. 
 
 ## Get Started
 
